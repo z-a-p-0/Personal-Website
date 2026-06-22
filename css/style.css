@@ -1,0 +1,150 @@
+/* ============================================ */
+/* CSS VARIABLES & FONT DEFINITIONS */
+/* ============================================ */
+:root {
+    /* COLOR PALETTE */
+    --primary-color: #1DD3B0; /* Primary (Teal) */
+    --accent-color: #FFBA49; /* Accent (Orange/Gold) */
+    --secondary-color: #9BD31D; /* Secondary (Lime Green) */
+    --dark-text: #292929;      /* Dark Text */
+    --light-text: #FFF2F0;     /* Light Text / Background */
+
+    /* FONT STACKING */
+    --font-heading: 'Trajan Supreme', serif; /* For headers */
+    --font-body: 'Poppins', sans-serif;      /* For body text and general content */
+}
+
+
+/* === 1. GLOBAL STYLES & RESETS === */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-body); /* Set Poppins globally for readability */
+    line-height: 1.6;
+    color: var(--dark-text);
+    background-color: #fff;
+    /* Note: If we want the entire background to be light text color, we can change this: */
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-heading); /* Set Trajan for all headings */
+    color: var(--dark-text);
+    margin-bottom: 0.5rem;
+}
+
+
+/* Utility class for centering content and limiting width */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+section {
+    padding: 80px 0;
+}
+
+
+/* === 2. HEADER & NAVIGATION STYLING === */
+
+/* ... (Rest of the header styles remain structurally sound, but inherit new colors) ... */
+.header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px;
+}
+
+.logo {
+    font-family: var(--font-heading); /* Applying Trajan to logo */
+    font-size: 1.8rem;
+    text-decoration: none;
+    color: var(--primary-color); /* Using primary color for brand identification */
+}
+
+/* ... (rest of the navbar styles) ... */
+
+
+/* === 3. UTILITY & COMPONENTS STYLING (Buttons, Cards) === */
+
+.button {
+    display: inline-block;
+    padding: 12px 25px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+    margin-right: 10px;
+}
+
+.button-primary {
+    background-color: var(--primary-color); /* Uses primary color */
+    color: white;
+    border: none;
+}
+
+/* Adjusting hover state to use accent color for visual interest */
+.button-primary:hover {
+    background-color: var(--accent-color); 
+    transform: translateY(-2px);
+}
+
+
+/* === 4. HERO SPECIFIC STYLES === */
+
+.hero-section {
+    padding: 100px 0;
+    text-align: center;
+    background-color: var(--light-text); /* Uses light background color */
+}
+
+.hero-content h1 {
+    font-size: 4rem; /* Increased size for impact */
+    margin-bottom: 1rem;
+    /* Potential use of accent/secondary here when we add text content */
+}
+
+
+/* === 5. PORTFOLIO GRID STYLING === */
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s;
+}
+
+/* Making project card titles stand out using the secondary color */
+.project-item h4 {
+    color: var(--secondary-color); 
+    font-size: 1.5rem;
+}
+
+
+/* === 6. FOOTER STYLING === */
+.footer {
+    background-color: #292929; /* Using dark text color for the footer background */
+    color: var(--light-text);
+    padding: 30px 0;
+    font-size: 0.9rem;
+}
+
+/* --- MEDIA QUERIES & ADJUSTMENTS (Placeholder) --- */
+@media (max-width: 768px) {
+    /* ... mobile adjustments will go here ... */
+}
