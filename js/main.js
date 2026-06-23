@@ -1,74 +1,137 @@
 // ============================================
-// JAVASCRIPT CORE LOGIC FOR YOUR PORTFOLIO
+// MAIN.JS — Portfolio Interactivity
 // ============================================
 
-
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Site loaded! Starting interactivity scripts...");
-    
-    // --- 1. MOBILE MENU TOGGLE LOGIC ---
+
+    // ----------------------------------------
+    // 1. MOBILE MENU TOGGLE
+    // ----------------------------------------
     const menuToggle = document.querySelector('.menu-toggle');
     const navbar = document.querySelector('.navbar');
+    const navLinks = document.querySelectorAll('.navbar a');
 
     if (menuToggle && navbar) {
         menuToggle.addEventListener('click', () => {
-            // Toggles the 'is-active' class, which CSS uses to show/hide the menu
-            console.log("Menu toggle clicked - Toggling navigation visibility.");
-            navbar.classList.toggle('is-active');
-
-            // Optional: Change aria attributes for accessibility
-            const isExpanded = navbar.classList.contains('is-active');
+            const isExpanded = navbar.classList.toggle('is-active');
             menuToggle.setAttribute('aria-expanded', isExpanded);
+        });
+
+        // Close menu when a nav link is clicked
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navbar.classList.remove('is-active');
+                menuToggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navbar.contains(e.target) && !menuToggle.contains(e.target)) {
+                navbar.classList.remove('is-active');
+                menuToggle.setAttribute('aria-expanded', 'false');
+            }
         });
     }
 
 
-    // --- 2. FORM VALIDATION LOGIC ---
+    // ----------------------------------------
+    // 2. CONTACT FORM VALIDATION
+    // ----------------------------------------
     const contactForm = document.querySelector('.contact-form');
 
     if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault(); 
-            
-            const emailInput = this.querySelector('input[type="email"]');
-            const nameInput = this.querySelector('input[type="text"]');
-            const messageTextarea = this.querySelector('textarea');
+        const feedback = contactForm.querySelector('.form-feedback');
 
-            // Basic Validation Check
-            if (!nameInput.value || !emailInput.value || !messageTextarea.value) {
-                alert("Please fill out all fields to send a message.");
-                return; 
+        function showFeedback(message, type) {
+            feedback.textContent = message;
+            feedback.className = `form-feedback ${type}`;
+        }
+
+        function clearFieldError(field) {
+            field.classList.remove('error');
+        }
+
+        function validateEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const nameInput    = contactForm.querySelector('input[name="name"]');
+            const emailInput   = contactForm.querySelector('input[name="email"]');
+            const messageInput = contactForm.querySelector('textarea[name="message"]');
+
+            // Clear previous error states
+            [nameInput, emailInput, messageInput].forEach(f => f.classList.remove('error'));
+            feedback.className = 'form-feedback';
+            feedback.textContent = '';
+
+            let valid = true;
+
+            if (!nameInput.value.trim()) {
+                nameInput.classList.add('error');
+                valid = false;
             }
-            
-            // Simulate successful submission (In a real app, you'd use fetch/AJAX here)
-            console.log("Attempting to submit contact form...");
 
-            // VISUAL FEEDBACK FOR USER: Clear the form and give success feedback
-            alert("✅ Message Sent Successfully! I will get back to you shortly.");
-            this.reset(); 
+            if (!emailInput.value.trim() || !validateEmail(emailInput.value.trim())) {
+                emailInput.classList.add('error');
+                valid = false;
+            }
+
+            if (!messageInput.value.trim()) {
+                messageInput.classList.add('error');
+                valid = false;
+            }
+
+            if (!valid) {
+                showFeedback('Please fill out all fields correctly.', 'error');
+                return;
+            }
+
+            // Success — swap button state while "sending"
+            const submitBtn = contactForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending…';
+
+            // Simulate async submission (replace with fetch() in production)
+            setTimeout(() => {
+                showFeedback('Message sent! I\'ll get back to you shortly.', 'success');
+                contactForm.reset();
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Message';
+            }, 1000);
+        });
+
+        // Clear error highlight on input
+        contactForm.querySelectorAll('input, textarea').forEach(field => {
+            field.addEventListener('input', () => clearFieldError(field));
         });
     }
 
 
-    // --- 3. SCROLL ANIMATIONS / STICKY HEADER LOGIC (Improvement Suggestion) ---
+    // ----------------------------------------
+    // 3. SCROLL ANIMATION (Intersection Observer)
+    // ----------------------------------------
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* Implementation using Intersection Observer for modern fade-in effects */
-    const sections = document.querySelectorAll('section');
-    const observerOptions = { root: null, threshold: 0.2 }; // Trigger when 20% of element is visible
+    if (!prefersReducedMotion) {
+        const sections = document.querySelectorAll('.section');
 
-    const sectionObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                // Adds a class that CSS can use to trigger an animation (e.g., fade-in)
-                entry.target.classList.add('visible'); 
-                observer.unobserve(entry.target); // Stop observing once it's animated in
-            }
-        });
-    }, observerOptions);
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { root: null, threshold: 0.15 });
 
-    sections.forEach(section => {
-        // We will use CSS to style the 'not visible' state for these sections
-        sectionObserver.observe(section);
-    });
+        sections.forEach(section => observer.observe(section));
+    } else {
+        // Immediately show all sections if reduced motion is preferred
+        document.querySelectorAll('.section').forEach(s => s.classList.add('visible'));
+    }
 
 });

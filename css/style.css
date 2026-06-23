@@ -1,23 +1,30 @@
 /* ============================================ */
-/* CSS VARIABLES & FONT DEFINITIONS */
+/* CSS VARIABLES                                */
 /* ============================================ */
 :root {
-    /* NEW COLOR PALETTE - LIGHT/TEAL MODE */
-    --primary-color: #1DD3B0; /* Primary (Teal) - CTA, Highlights */
-    --accent-color: #FFBA49; /* Accent (Orange/Gold) - Hover, Secondary Emphasis */
-    --secondary-color: #9BD31D; /* Secondary (Lime Green) - Headers, Tertiary details */
-    --dark-text: #292929;      /* Dark Text */
-    --light-bg: #FFFCF2;       /* Light Background / Creamy Off-White */
+    --primary-color: #1DD3B0;
+    --accent-color: #FFBA49;
+    --secondary-color: #9BD31D;
+    --dark-text: #292929;
+    --light-bg: #FFFCF2;
+    --white: #ffffff;
+    --card-bg: #ffffff;
+    --light-text: #ffffff;
+    --border-color: #ddd;
 
-    /* FONT STACKING */
-    --font-heading: 'Trajan Supreme', serif; /* For headers */
-    --font-body: 'Poppins', sans-serif;      /* For body text and general content */
+    --font-heading: 'Trajan Supreme', serif;
+    --font-body: 'Poppins', sans-serif;
+
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);
+    --shadow-card: 0 5px 15px rgba(41, 41, 41, 0.08);
+    --shadow-card-hover: 0 12px 30px rgba(29, 211, 176, 0.2);
 }
 
 
-/* === 1. GLOBAL STYLES & RESETS === */
-
-* {
+/* ============================================ */
+/* 1. GLOBAL RESET & BASE                       */
+/* ============================================ */
+*, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -30,18 +37,29 @@ html {
 body {
     font-family: var(--font-body);
     line-height: 1.6;
-    color: var(--dark-text); /* Default text color is now dark */
-    background-color: var(--light-bg); /* MAIN BACKGROUND IS CREAMY OFF-WHITE */
+    color: var(--dark-text);
+    background-color: var(--light-bg);
 }
 
 h1, h2, h3, h4 {
-    font-family: var(--font-heading); 
+    font-family: var(--font-heading);
     color: var(--dark-text);
     margin-bottom: 0.5rem;
-    line-height: 1.1; 
+    line-height: 1.1;
 }
 
-/* Utility class for centering content and limiting width */
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* Keyboard focus styles */
+:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -50,19 +68,39 @@ h1, h2, h3, h4 {
 
 section {
     padding: 80px 0;
-    transition: background-color 0.5s ease;
+}
+
+/* Scroll animation base state */
+.section {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .section {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
 }
 
 
-/* === 2. HEADER & NAVIGATION STYLING === */
-
+/* ============================================ */
+/* 2. HEADER & NAVIGATION                       */
+/* ============================================ */
 .header {
-    background-color: #ffffff; /* Keep header white/very light to lift it off the cream body */
+    background-color: var(--white);
     border-bottom: 1px solid #eee;
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); 
+    box-shadow: var(--shadow-sm);
 }
 
 .nav-content {
@@ -76,82 +114,52 @@ section {
     font-family: var(--font-heading);
     font-size: 1.8rem;
     text-decoration: none;
-    color: var(--primary-color); /* Keep logo primary color */
-    cursor: pointer;
+    color: var(--primary-color);
 }
 
-/* Navbar List Styling */
 .navbar ul {
     display: flex;
     list-style: none;
+    gap: 4px;
 }
 
 .navbar li a {
     text-decoration: none;
-    color: var(--dark-text); 
+    color: var(--dark-text);
     padding: 10px 15px;
     font-weight: 600;
-    transition: color 0.3s, border-bottom 0.3s;
+    border-bottom: 2px solid transparent;
+    transition: color 0.3s, border-color 0.3s;
+    display: block;
 }
 
-/* Active/Hover effect using the primary color (Teal) */
 .navbar li a:hover {
-    color: var(--primary-color); 
-    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
 }
 
-
-/* === 3. UTILITY & COMPONENTS STYLING (Buttons, Cards) === */
-
-.button {
-    display: inline-block;
-    padding: 12px 30px;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 700;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+/* Mobile toggle — hidden on desktop */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
     cursor: pointer;
-    border: 2px solid transparent;
-}
-
-/* Primary Button (Used for main CTAs - Teal) */
-.button-primary {
-    background-color: var(--primary-color);
-    color: #ffffff; /* White text on primary color background */
-    border-color: var(--primary-color);
-}
-
-/* Primary Button Hover Effect (Uses Accent Color) */
-.button-primary:hover {
-    background-color: var(--accent-color); 
-    border-color: var(--accent-color);
-    transform: translateY(-3px) scale(1.02);
+    color: var(--dark-text);
+    padding: 8px;
+    line-height: 1;
 }
 
 
-/* Secondary Button (Used for links/less critical actions - Orange Gold) */
-.button-secondary {
-    background-color: transparent;
-    color: var(--primary-color); /* Primary color text on card background */
-    border-color: var(--primary-color);
-    padding: 10px 25px;
-}
+/* ============================================ */
+/* 3. SECTIONS                                  */
+/* ============================================ */
 
-/* Secondary Button Hover Effect (Fills with primary color) */
-.button-secondary:hover {
-    background-color: var(--primary-color);
-    color: #ffffff; /* White text on hover fill */
-    transform: translateY(-1px);
-}
-
-
-/* === 4. SECTION STYLING & VISUAL RHYTHM === */
-
-/* HERO SECTION - Background remains light */
+/* HERO */
 .hero-section {
     padding: 120px 0;
     text-align: center;
-    background-color: var(--light-bg); /* Uses light background color */
+    background-color: var(--light-bg);
 }
 
 .hero-content h1 {
@@ -161,7 +169,7 @@ section {
 
 .hero-content h2 {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
-    color: var(--secondary-color); /* Secondary color for impact subtitle */
+    color: var(--secondary-color);
     margin-bottom: 1.5rem;
 }
 
@@ -171,93 +179,61 @@ section {
     font-size: 1.2rem;
 }
 
-
-/* ABOUT SECTION - Alternating Background */
+/* ABOUT */
 .about-me {
-    background-color: #ffffff; /* Use pure white for contrast against light-bg */
+    background-color: var(--white);
 }
 
+/* Shared section heading */
 .section h3 {
     font-size: 2.5rem;
     margin-bottom: 30px;
     text-align: center;
-    /* Using secondary color for the main section header */
     color: var(--secondary-color);
 }
 
-/* PORTFOLIO SECTION - Alternating Background (Slightly darker off-white) */
+/* PORTFOLIO */
 .portfolio-showcase {
-    background-color: #f8f5f1; /* A slightly different shade of cream for subtle separation */
+    background-color: #f8f5f1;
 }
 
-
-/* PROJECT CARD STYLES */
-.card {
-    background: var(--card-bg); 
-    border: 1px solid #ddd;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(41, 41, 41, 0.08);
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 30px rgba(29, 211, 176, 0.2); /* Primary accent shadow */
-}
-
-/* Making project card titles stand out using the secondary color */
-.project-item h4 {
-    color: var(--secondary-color); 
-    font-size: 1.5rem;
-    margin-top: 0;
-}
-
-
-/* CONTACT FORM STYLING (Using Grid) */
-.contact-form-section {
-     background-color: var(--light-bg); /* Matches body background for consistency */
-}
-
-
-.contact-form {
+.project-grid {
     display: grid;
-    gap: 20px;
-    max-width: 600px;
-    margin: 30px auto 0 auto;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    margin-top: 10px;
 }
 
-/* Inputs should stand out with a white background and dark text */
-.contact-form input[type="text"],
-.contact-form input[type="email"],
-.contact-form textarea {
-    width: 100%;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-family: var(--font-body);
-    background-color: #ffffff; /* White background for input fields */
-    color: var(--dark-text); /* Dark text in inputs */
+/* CONTACT */
+.contact-form-section {
+    background-color: var(--light-bg);
 }
 
-.contact-form textarea {
-    resize: vertical;
+.contact-intro {
+    text-align: center;
+    margin-bottom: 40px;
 }
 
 
-/* === 5. FOOTER STYLING & MEDIA QUERIES === */
+/* ============================================ */
+/* 4. FOOTER                                    */
+/* ============================================ */
 .footer {
-    background-color: #292929; /* Keep footer dark for a strong anchor point */
+    background-color: #292929;
     color: var(--light-text);
     padding: 40px 0;
     font-size: 0.9rem;
 }
 
-.footer .container {
+.footer-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
+}
+
+.footer p {
+    color: var(--light-text);
 }
 
 .social-links a {
@@ -267,18 +243,76 @@ section {
     transition: color 0.3s;
 }
 
-/* Social links hover state using the primary accent */
 .social-links a:hover {
-    color: var(--primary-color); 
+    color: var(--primary-color);
 }
 
 
-/* --- MEDIA QUERIES (Responsiveness) --- */
+/* ============================================ */
+/* 5. MEDIA QUERIES                             */
+/* ============================================ */
 @media (max-width: 992px) {
     section { padding: 60px 0; }
-    .hero-content h1 { font-size: 3rem; }
+    .hero-section { padding: 80px 0; }
+    .project-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-    /* ... Mobile adjustments remain the same... */
+    /* Mobile nav */
+    .menu-toggle {
+        display: block;
+    }
+
+    .navbar {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: var(--white);
+        border-top: 1px solid #eee;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+        padding: 12px 0;
+    }
+
+    .navbar.is-active {
+        display: block;
+    }
+
+    .navbar ul {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .navbar li a {
+        padding: 14px 20px;
+        border-bottom: none;
+        border-left: 3px solid transparent;
+    }
+
+    .navbar li a:hover {
+        border-bottom-color: transparent;
+        border-left-color: var(--primary-color);
+        background-color: #f5f5f5;
+    }
+
+    /* Sections */
+    .project-grid { grid-template-columns: 1fr; }
+
+    .footer-content {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .social-links a {
+        margin: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content h1 { font-size: 2.2rem; }
+    .hero-content h2 { font-size: 1.4rem; }
+    .hero-content p  { font-size: 1rem; }
+    .section h3      { font-size: 2rem; }
 }
