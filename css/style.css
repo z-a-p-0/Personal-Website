@@ -2,12 +2,12 @@
 /* CSS VARIABLES & FONT DEFINITIONS */
 /* ============================================ */
 :root {
-    /* COLOR PALETTE */
-    --primary-color: #1DD3B0; /* Primary (Teal) */
-    --accent-color: #FFBA49; /* Accent (Orange/Gold) */
-    --secondary-color: #9BD31D; /* Secondary (Lime Green) */
+    /* NEW COLOR PALETTE - LIGHT/TEAL MODE */
+    --primary-color: #1DD3B0; /* Primary (Teal) - CTA, Highlights */
+    --accent-color: #FFBA49; /* Accent (Orange/Gold) - Hover, Secondary Emphasis */
+    --secondary-color: #9BD31D; /* Secondary (Lime Green) - Headers, Tertiary details */
     --dark-text: #292929;      /* Dark Text */
-    --light-text: #FFF2F0;     /* Light Text / Background */
+    --light-bg: #FFFCF2;       /* Light Background / Creamy Off-White */
 
     /* FONT STACKING */
     --font-heading: 'Trajan Supreme', serif; /* For headers */
@@ -23,20 +23,23 @@
     padding: 0;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
-    font-family: var(--font-body); /* Set Poppins globally for readability */
+    font-family: var(--font-body);
     line-height: 1.6;
-    color: var(--dark-text);
-    background-color: #fff;
-    /* Note: If we want the entire background to be light text color, we can change this: */
+    color: var(--dark-text); /* Default text color is now dark */
+    background-color: var(--light-bg); /* MAIN BACKGROUND IS CREAMY OFF-WHITE */
 }
 
 h1, h2, h3, h4 {
-    font-family: var(--font-heading); /* Set Trajan for all headings */
+    font-family: var(--font-heading); 
     color: var(--dark-text);
     margin-bottom: 0.5rem;
+    line-height: 1.1; 
 }
-
 
 /* Utility class for centering content and limiting width */
 .container {
@@ -47,104 +50,235 @@ h1, h2, h3, h4 {
 
 section {
     padding: 80px 0;
+    transition: background-color 0.5s ease;
 }
 
 
 /* === 2. HEADER & NAVIGATION STYLING === */
 
-/* ... (Rest of the header styles remain structurally sound, but inherit new colors) ... */
 .header {
-    background-color: #ffffff;
+    background-color: #ffffff; /* Keep header white/very light to lift it off the cream body */
     border-bottom: 1px solid #eee;
     position: sticky;
     top: 0;
     z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); 
 }
 
 .nav-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 20px;
+    padding: 15px 20px;
 }
 
 .logo {
-    font-family: var(--font-heading); /* Applying Trajan to logo */
+    font-family: var(--font-heading);
     font-size: 1.8rem;
     text-decoration: none;
-    color: var(--primary-color); /* Using primary color for brand identification */
+    color: var(--primary-color); /* Keep logo primary color */
+    cursor: pointer;
 }
 
-/* ... (rest of the navbar styles) ... */
+/* Navbar List Styling */
+.navbar ul {
+    display: flex;
+    list-style: none;
+}
+
+.navbar li a {
+    text-decoration: none;
+    color: var(--dark-text); 
+    padding: 10px 15px;
+    font-weight: 600;
+    transition: color 0.3s, border-bottom 0.3s;
+}
+
+/* Active/Hover effect using the primary color (Teal) */
+.navbar li a:hover {
+    color: var(--primary-color); 
+    border-bottom: 2px solid var(--primary-color);
+}
 
 
 /* === 3. UTILITY & COMPONENTS STYLING (Buttons, Cards) === */
 
 .button {
     display: inline-block;
-    padding: 12px 25px;
-    border-radius: 5px;
+    padding: 12px 30px;
+    border-radius: 50px;
     text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s, transform 0.2s;
-    margin-right: 10px;
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+    border: 2px solid transparent;
 }
 
+/* Primary Button (Used for main CTAs - Teal) */
 .button-primary {
-    background-color: var(--primary-color); /* Uses primary color */
-    color: white;
-    border: none;
+    background-color: var(--primary-color);
+    color: #ffffff; /* White text on primary color background */
+    border-color: var(--primary-color);
 }
 
-/* Adjusting hover state to use accent color for visual interest */
+/* Primary Button Hover Effect (Uses Accent Color) */
 .button-primary:hover {
     background-color: var(--accent-color); 
-    transform: translateY(-2px);
+    border-color: var(--accent-color);
+    transform: translateY(-3px) scale(1.02);
 }
 
 
-/* === 4. HERO SPECIFIC STYLES === */
+/* Secondary Button (Used for links/less critical actions - Orange Gold) */
+.button-secondary {
+    background-color: transparent;
+    color: var(--primary-color); /* Primary color text on card background */
+    border-color: var(--primary-color);
+    padding: 10px 25px;
+}
 
+/* Secondary Button Hover Effect (Fills with primary color) */
+.button-secondary:hover {
+    background-color: var(--primary-color);
+    color: #ffffff; /* White text on hover fill */
+    transform: translateY(-1px);
+}
+
+
+/* === 4. SECTION STYLING & VISUAL RHYTHM === */
+
+/* HERO SECTION - Background remains light */
 .hero-section {
-    padding: 100px 0;
+    padding: 120px 0;
     text-align: center;
-    background-color: var(--light-text); /* Uses light background color */
+    background-color: var(--light-bg); /* Uses light background color */
 }
 
 .hero-content h1 {
-    font-size: 4rem; /* Increased size for impact */
-    margin-bottom: 1rem;
-    /* Potential use of accent/secondary here when we add text content */
+    font-size: clamp(3rem, 6vw, 5rem);
+    margin-bottom: 0.5rem;
+}
+
+.hero-content h2 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    color: var(--secondary-color); /* Secondary color for impact subtitle */
+    margin-bottom: 1.5rem;
+}
+
+.hero-content p {
+    max-width: 700px;
+    margin: 0 auto 30px auto;
+    font-size: 1.2rem;
 }
 
 
-/* === 5. PORTFOLIO GRID STYLING === */
+/* ABOUT SECTION - Alternating Background */
+.about-me {
+    background-color: #ffffff; /* Use pure white for contrast against light-bg */
+}
 
+.section h3 {
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    text-align: center;
+    /* Using secondary color for the main section header */
+    color: var(--secondary-color);
+}
+
+/* PORTFOLIO SECTION - Alternating Background (Slightly darker off-white) */
+.portfolio-showcase {
+    background-color: #f8f5f1; /* A slightly different shade of cream for subtle separation */
+}
+
+
+/* PROJECT CARD STYLES */
 .card {
-    background: #fff;
+    background: var(--card-bg); 
     border: 1px solid #ddd;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: var(--card-shadow);
-    transition: transform 0.3s;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(41, 41, 41, 0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(29, 211, 176, 0.2); /* Primary accent shadow */
 }
 
 /* Making project card titles stand out using the secondary color */
 .project-item h4 {
     color: var(--secondary-color); 
     font-size: 1.5rem;
+    margin-top: 0;
 }
 
 
-/* === 6. FOOTER STYLING === */
+/* CONTACT FORM STYLING (Using Grid) */
+.contact-form-section {
+     background-color: var(--light-bg); /* Matches body background for consistency */
+}
+
+
+.contact-form {
+    display: grid;
+    gap: 20px;
+    max-width: 600px;
+    margin: 30px auto 0 auto;
+}
+
+/* Inputs should stand out with a white background and dark text */
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    background-color: #ffffff; /* White background for input fields */
+    color: var(--dark-text); /* Dark text in inputs */
+}
+
+.contact-form textarea {
+    resize: vertical;
+}
+
+
+/* === 5. FOOTER STYLING & MEDIA QUERIES === */
 .footer {
-    background-color: #292929; /* Using dark text color for the footer background */
+    background-color: #292929; /* Keep footer dark for a strong anchor point */
     color: var(--light-text);
-    padding: 30px 0;
+    padding: 40px 0;
     font-size: 0.9rem;
 }
 
-/* --- MEDIA QUERIES & ADJUSTMENTS (Placeholder) --- */
+.footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.social-links a {
+    color: var(--light-text);
+    margin-left: 20px;
+    font-size: 1.5rem;
+    transition: color 0.3s;
+}
+
+/* Social links hover state using the primary accent */
+.social-links a:hover {
+    color: var(--primary-color); 
+}
+
+
+/* --- MEDIA QUERIES (Responsiveness) --- */
+@media (max-width: 992px) {
+    section { padding: 60px 0; }
+    .hero-content h1 { font-size: 3rem; }
+}
+
 @media (max-width: 768px) {
-    /* ... mobile adjustments will go here ... */
+    /* ... Mobile adjustments remain the same... */
 }

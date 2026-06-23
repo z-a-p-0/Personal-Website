@@ -14,85 +14,83 @@
     <link rel="stylesheet" href="./css/style.css">
 
 
-    <!-- Optional: Link to an icon library (like Font Awesome) for social media icons later -->
+    <!-- Optional: Link to an icon library (like Font Awesome) for social media icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> 
 </head>
 <body class="poppins-text">
 
-    <!-- 1. NAVIGATION BAR / HEADER (Fixed structure at the top) -->
+    <!-- 1. NAVIGATION BAR / HEADER -->
     <header class="header">
         <div class="container nav-content">
             <a href="#home" class="logo">ZAP</a>
             <nav class="navbar">
-                <ul>
-                    <li><a href="#home">Home</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#portfolio">Portfolio</a></li>
-                    <li><a href="#contact">Contact</a></li>
+                <ul role="menubar">
+                    <li role="none"><a href="#home" role="menuitem">Home</a></li>
+                    <li role="none"><a href="#about" role="menuitem">About</a></li>
+                    <li role="none"><a href="#portfolio" role="menuitem">Portfolio</a></li>
+                    <li role="none"><a href="#contact" role="menuitem">Contact</a></li>
                 </ul>
-                <!-- Placeholder for mobile menu button -->
-                <button class="menu-toggle" aria-label="Toggle Navigation">&#9776;</button>
+                <button class="menu-toggle" aria-label="Toggle Navigation Menu">&#9776;</button>
             </nav>
         </div>
     </header>
 
-    <!-- 2. MAIN CONTENT AREA (The bulk of the page) -->
+    <!-- 2. MAIN CONTENT AREA -->
     <main>
         <!-- HERO SECTION: The first thing the visitor sees -->
-        <section id="home" class="hero-section">
+        <section id="home" class="hero-section visible"> 
             <div class="container hero-content">
-                <h1>Hello, I'm [ZAP].</h1>
-                <h2>I build immersive digital experiences.</h2>
-                <p>A concise sentence describing your unique value proposition (e.g., "Full Stack Developer focused on clean design and scalable backend systems.")</p>
+                <h1>Hello, I'm ZAP.</h1>
+                <h2>I do stuff.</h2>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
                 <!-- Action Button -->
                 <a href="#portfolio" class="button button-primary">View My Work</a>
             </div>
         </section>
 
         <!-- ABOUT SECTION: Details about you -->
-        <section id="about" class="section about-me">
+        <section id="about" class="section about-me visible"> 
              <div class="container">
                  <h3>About Me</h3>
-                 <p>[Placeholder for your biography. Focus on passion and expertise.]</p>
-                 <!-- Placeholder for skills list or timeline -->
+                 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
              </div>
         </section>
 
-        <!-- PORTFOLIO SECTION: Displaying projects (A grid layout will be used here) -->
-        <section id="portfolio" class="section portfolio-showcase">
+        <!-- PORTFOLIO SECTION: Displaying projects -->
+        <section id="portfolio" class="section portfolio-showcase visible">
             <div class="container">
                 <h3>Featured Projects</h3>
                 <div class="project-grid">
                     <!-- PROJECT CARD 1 -->
                     <article class="card project-item">
-                        <h4>Project Title One</h4>
-                        <p>Brief description of the challenge and the solution.</p>
-                        <a href="#" target="_blank" class="button secondary">View Project</a>
+                        <h4>E-commerce Platform Redesign</h4>
+                        <p>Rebuilt a legacy e-commerce site, improving conversion rates by focusing on optimized UX flows and modern component architecture.</p>
+                        <a href="#" target="_blank" class="button button-secondary">View Project</a>
                     </article>
                      <!-- PROJECT CARD 2 -->
                     <article class="card project-item">
-                        <h4>Project Title Two</h4>
-                        <p>Brief description of the challenge and the solution.</p>
-                         <a href="#" target="_blank" class="button secondary">View Project</a>
+                        <h4>Internal Dashboard Tool</h4>
+                        <p>Developed a data visualization dashboard for internal metrics, allowing management to monitor KPIs in real-time with minimal latency.</p>
+                         <a href="#" target="_blank" class="button button-secondary">View Project</a>
                     </article>
                      <!-- PROJECT CARD 3 -->
                     <article class="card project-item">
-                        <h4>Project Title Three</h4>
-                        <p>Brief description of the challenge and the solution.</p>
-                         <a href="#" target="_blank" class="button secondary">View Project</a>
+                        <h4>API Integration Service</h4>
+                        <p>Created a microservice layer to connect disparate third-party APIs (e.g., payment, mapping), ensuring scalable data exchange.</p>
+                         <a href="#" target="_blank" class="button button-secondary">View Project</a>
                     </article>
                 </div>
             </div>
         </section>
 
         <!-- CONTACT SECTION: The call to action -->
-        <section id="contact" class="section contact-form-section">
+        <section id="contact" class="section contact-form-section visible">
              <div class="container">
-                 <h3>Get In Touch</h3>
-                 <p>Have a project in mind? Let's connect!</p>
+                 <h3>Let's Connect</h3>
+                 <p style="text-align: center; margin-bottom: 40px;">Have a project in mind? Whether it's modernizing an old system or launching a new idea, I'm ready to talk!</p>
                  <form class="contact-form">
                      <!-- Form fields will go here -->
-                     <input type="text" placeholder="ZAP" required>
+                     <input type="text" placeholder="Your Name" required>
                      <input type="email" placeholder="Your Email" required>
                      <textarea rows="5" placeholder="Tell me about your project..."></textarea>
                      <button type="submit" class="button button-primary">Send Message</button>
@@ -107,11 +105,10 @@
         <div class="container">
             <p>&copy; 2026 ZAP. All Rights Reserved.</p>
             <div class="social-links">
-                <!-- Social icons will go here (e.g., LinkedIn, GitHub) -->
                 <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
                 <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
-            </div>
-        </div>
+            </div >
+        </div >
     </footer>
 
     <!-- LINK JS HERE: Scripts should always go right before the closing body tag -->
