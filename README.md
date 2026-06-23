@@ -9,7 +9,7 @@ My own personal website (or portfolio website)
 #FFBA49 - Accent
 #9BD31D - Secondary
 #292929 - Dark Text
-#FFF2F0 - Light Text
+#FFFCF2 - Light Text & Background
 
 ### Fonts
 
