@@ -41,12 +41,22 @@
 
         <!-- HERO -->
         <section id="home" class="hero-section">
-            <div class="container hero-content">
+            <!-- Layer 1: teal radial glow (below ZAP) -->
+            <canvas class="hero-glow" id="heroGlow" aria-hidden="true"></canvas>
+            <!-- Layer 2: ZAP letters -->
+            <div class="hero-zap" id="zapGrid" aria-hidden="true"></div>
+            <!-- Layer 3: text content -->
+            <div class="hero-text container">
                 <h1>Hello, I'm ZAP.</h1>
                 <h2>I do stuff.</h2>
                 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            </div>
+            <!-- Layer 4: button -->
+            <div class="hero-cta">
                 <a href="#portfolio" class="button button-primary">View My Work</a>
             </div>
+            <!-- Layer 5: mouse tracker (covers everything, pointer-events only) -->
+            <div class="hero-mouse" id="heroMouse" aria-hidden="true"></div>
         </section>
 
         <!-- ABOUT -->
