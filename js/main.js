@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------
     const contactFormElement = document.querySelector('.contact-form');
     if (contactFormElement) {
-        const feedbackDisplay      = contactFormElement.querySelector('.form-feedback');
+        const feedbackDisplay    = contactFormElement.querySelector('.form-feedback');
         const isValidEmailFormat = (emailValue) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
 
         contactFormElement.addEventListener('submit', submitEvent => {
@@ -48,9 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
             feedbackDisplay.textContent = '';
 
             let isFormValid = true;
-            if (!nameInput.value.trim())                                      { nameInput.classList.add('error');    isFormValid = false; }
-            if (!emailInput.value.trim() || !isValidEmailFormat(emailInput.value.trim())) { emailInput.classList.add('error');  isFormValid = false; }
-            if (!messageInput.value.trim())                                   { messageInput.classList.add('error'); isFormValid = false; }
+            if (!nameInput.value.trim())                                                  { nameInput.classList.add('error');    isFormValid = false; }
+            if (!emailInput.value.trim() || !isValidEmailFormat(emailInput.value.trim())) { emailInput.classList.add('error');   isFormValid = false; }
+            if (!messageInput.value.trim())                                               { messageInput.classList.add('error'); isFormValid = false; }
             if (!isFormValid) {
                 feedbackDisplay.textContent = 'Please fill out all fields correctly.';
                 feedbackDisplay.className = 'form-feedback error';
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentCharIndex === 0) {
                     // Finished deleting — move to next phrase
                     if (cursorElement) cursorElement.classList.remove('typing');
-                    isDeletingMode  = false;
+                    isDeletingMode     = false;
                     currentPhraseIndex = (currentPhraseIndex + 1) % phraseList.length;
                     setTimeout(animateTypewriter, getRandomDelay(300, 600));
                     return;
@@ -150,23 +150,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------
     // 4. HERO ZAP GRID + HOVER / CLICK EFFECTS
     // ----------------------------------------
-    const zapGridContainer = document.getElementById('zapGrid');
-    const glowCanvasElement = document.getElementById('heroGlow');
-    const heroMouseTracker = document.getElementById('heroMouse');
+    const zapGridContainer   = document.getElementById('zapGrid');
+    const glowCanvasElement  = document.getElementById('heroGlow');
+    const heroMouseTracker   = document.getElementById('heroMouse');
     const heroSectionElement = document.querySelector('.hero-section');
 
     if (zapGridContainer && glowCanvasElement && heroMouseTracker && heroSectionElement) {
 
-        const GRID_LETTERS       = ['Z', 'A', 'P'];
-        const LETTER_SPACING     = 0.02;
-        const GROUP_SPACING      = 0.2;
+        const GRID_LETTERS      = ['Z', 'A', 'P'];
+        const LETTER_SPACING    = 0.02;
+        const GROUP_SPACING     = 0.2;
         const HOVER_GLOW_RADIUS = 200;
 
-        let letterSpanData = [];
-        let canvasContext  = null;
-        let activeRipples  = [];
+        // Alpha decay: how much glow drains per millisecond when no active source drives a letter.
+        // At 0.0008 a fully-lit letter fades to invisible over ~1250 ms.
+        const GLOW_DECAY_RATE_PER_MS = 0.005;
+
+        let letterSpanData   = [];
+        let canvasContext    = null;
+        let activeRipples    = [];
         let animationFrameId = null;
-        let currentHoverPos = null;
+        let currentHoverPos  = null;
+        let lastFrameTimestamp = null; // used to compute delta-time for decay
+
+        // Per-letter persistent glow state — decays smoothly between frames
+        // These are kept in parallel arrays (same index as letterSpanData) for speed
+        let letterDecayFill   = []; // current decayed fill alpha for each letter
+        let letterDecayStroke = []; // current decayed stroke alpha for each letter
 
         function resizeGlowCanvas() {
             glowCanvasElement.width  = heroSectionElement.offsetWidth;
@@ -186,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             measureElement.style.fontWeight = '700';
             measureElement.style.lineHeight = '1';
             document.body.appendChild(measureElement);
-            const measuredWidth = measureElement.offsetWidth;
+            const measuredWidth  = measureElement.offsetWidth;
             const measuredHeight = measureElement.offsetHeight;
             document.body.removeChild(measureElement);
             return { w: measuredWidth, h: measuredHeight };
@@ -194,18 +204,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function buildLetterGrid() {
             zapGridContainer.querySelectorAll('span').forEach(spanEl => spanEl.remove());
-            letterSpanData = [];
+            letterSpanData   = [];
+            letterDecayFill   = [];
+            letterDecayStroke = [];
             resizeGlowCanvas();
 
-            const sectionWidth = heroSectionElement.offsetWidth;
+            const sectionWidth  = heroSectionElement.offsetWidth;
             const sectionHeight = heroSectionElement.offsetHeight;
 
             const { w: measureCharWidth, h: rowHeight } = measureLetterDimensions('W');
             if (!measureCharWidth || !rowHeight) return;
 
-            // Font size from actual rendered height is more reliable
-            // Use the W glyph offsetWidth as proxy for em unit
-            // Actually measure font-size from a span directly
+            // Measure the computed font-size (used for spacing calculations)
             const fontSizeProbe = document.createElement('span');
             fontSizeProbe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;font-family:\'Trajan Supreme\',serif;font-size:clamp(5rem,11vw,9rem);font-weight:700;line-height:1;';
             document.body.appendChild(fontSizeProbe);
@@ -215,24 +225,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const letterWidths = {};
             GRID_LETTERS.forEach(letter => { letterWidths[letter] = measureLetterDimensions(letter).w; });
 
-            const totalRows = Math.ceil(sectionHeight / rowHeight) + 1;
+            const totalRows       = Math.ceil(sectionHeight / rowHeight) + 1;
             const documentFragment = document.createDocumentFragment();
 
             for (let rowIndex = 0; rowIndex < totalRows; rowIndex++) {
-                const yPosition = rowIndex * rowHeight;
+                const yPosition  = rowIndex * rowHeight;
                 const rowOffsetX = (rowIndex % 2 === 1) ? calculatedFontSize * 0.6 : 0;
-                let xPosition = rowOffsetX - calculatedFontSize * 0.5;
-                let letterIndex = 0;
+                let xPosition    = rowOffsetX - calculatedFontSize * 0.5;
+                let letterIndex  = 0;
 
                 while (xPosition < sectionWidth + calculatedFontSize) {
-                    const currentLetter = GRID_LETTERS[letterIndex % GRID_LETTERS.length];
-                    const letterWidth = letterWidths[currentLetter];
+                    const currentLetter     = GRID_LETTERS[letterIndex % GRID_LETTERS.length];
+                    const letterWidth       = letterWidths[currentLetter];
                     const letterSpanElement = document.createElement('span');
                     letterSpanElement.textContent = currentLetter;
                     letterSpanElement.style.left  = xPosition + 'px';
                     letterSpanElement.style.top   = yPosition + 'px';
                     documentFragment.appendChild(letterSpanElement);
                     letterSpanData.push({ el: letterSpanElement, cx: xPosition + letterWidth / 2, cy: yPosition + rowHeight / 2 });
+                    letterDecayFill.push(0);
+                    letterDecayStroke.push(0);
                     xPosition += letterWidth + (letterIndex % 3 === 2 ? calculatedFontSize * GROUP_SPACING : calculatedFontSize * LETTER_SPACING);
                     letterIndex++;
                 }
@@ -256,12 +268,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function drawAnimationFrame(currentTimestamp) {
             if (!canvasContext) return;
-            const canvasWidth = glowCanvasElement.width, canvasHeight = glowCanvasElement.height;
+
+            // Delta-time in ms since last frame — used to advance the decay
+            const deltaMs = lastFrameTimestamp !== null ? currentTimestamp - lastFrameTimestamp : 0;
+            lastFrameTimestamp = currentTimestamp;
+            const decayStep = GLOW_DECAY_RATE_PER_MS * deltaMs;
+
+            const canvasWidth  = glowCanvasElement.width;
+            const canvasHeight = glowCanvasElement.height;
             canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
             activeRipples = activeRipples.filter(ripple => currentTimestamp - ripple.startTime < ripple.duration);
 
-            const hasActiveAnimation = activeRipples.length > 0 || currentHoverPos !== null;
-
+            // Draw hover canvas glow
             if (currentHoverPos) {
                 const hoverGradient = canvasContext.createRadialGradient(currentHoverPos.x, currentHoverPos.y, 0, currentHoverPos.x, currentHoverPos.y, HOVER_GLOW_RADIUS);
                 hoverGradient.addColorStop(0,   'rgba(29,211,176,0.3)');
@@ -271,11 +289,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
             }
 
+            // Draw ripple canvas glows
             activeRipples.forEach(ripple => {
-                const rippleProgress = (currentTimestamp - ripple.startTime) / ripple.duration;
+                const rippleProgress   = (currentTimestamp - ripple.startTime) / ripple.duration;
                 const easeOutQuadratic = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
                 const oscillationAlpha = Math.sin(rippleProgress * Math.PI);
-                const rippleGradient = canvasContext.createRadialGradient(ripple.x, ripple.y, 0, ripple.x, ripple.y, easeOutQuadratic * ripple.maxRadius);
+                const rippleGradient   = canvasContext.createRadialGradient(ripple.x, ripple.y, 0, ripple.x, ripple.y, easeOutQuadratic * ripple.maxRadius);
                 rippleGradient.addColorStop(0,   `rgba(29,211,176,${(oscillationAlpha*0.22).toFixed(3)})`);
                 rippleGradient.addColorStop(0.6, `rgba(29,211,176,${(oscillationAlpha*0.09).toFixed(3)})`);
                 rippleGradient.addColorStop(1,   'rgba(29,211,176,0)');
@@ -283,72 +302,96 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
             });
 
-            letterSpanData.forEach(({ el: letterEl, cx: letterCenterX, cy: letterCenterY }) => {
-                // 1. Calculate potential glow from HOVER (Max value)
-                let bestHoverFill = 0;
-                let bestHoverStroke = 0;
+            // Update each letter's glow:
+            // 1. Compute the target alpha driven by hover/ripples this frame.
+            // 2. If target > current decayed value → snap up immediately (responsive).
+            // 3. If target < current decayed value → drain toward target by decayStep (smooth fade).
+            let anyLetterStillGlowing = false;
+
+            letterSpanData.forEach(({ el: letterEl, cx: letterCenterX, cy: letterCenterY }, letterIdx) => {
+                // --- compute this frame's driven target ---
+                let targetFill   = 0;
+                let targetStroke = 0;
 
                 if (currentHoverPos) {
                     const distanceFromHover = Math.hypot(letterCenterX - currentHoverPos.x, letterCenterY - currentHoverPos.y);
                     if (distanceFromHover < HOVER_GLOW_RADIUS) {
                         const proximityRatio = 1 - distanceFromHover / HOVER_GLOW_RADIUS;
-                        // Calculate the glow intensity only from hover
-                        bestHoverFill   = Math.max(bestHoverFill,   proximityRatio * proximityRatio);
-                        bestHoverStroke = Math.max(bestHoverStroke, proximityRatio * 1.5);
+                        targetFill   = Math.max(targetFill,   proximityRatio * proximityRatio);
+                        targetStroke = Math.max(targetStroke, proximityRatio * 1.5);
                     }
                 }
 
-                // 2. Calculate potential glow from RIPPLING (Max value across all ripples)
-                let maxRippleFill = 0;
-                let maxRippleStroke = 0;
-
                 activeRipples.forEach(ripple => {
-                    const rippleProgress = (currentTimestamp - ripple.startTime) / ripple.duration;
+                    const rippleProgress   = (currentTimestamp - ripple.startTime) / ripple.duration;
                     const easeOutQuadratic = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
                     const rippleEdgePosition = easeOutQuadratic * ripple.maxRadius - Math.hypot(letterCenterX - ripple.x, letterCenterY - ripple.y);
-                    const rippleWaveWidth = ripple.maxRadius * 0.3;
-
+                    const rippleWaveWidth    = ripple.maxRadius * 0.3;
                     if (rippleEdgePosition > 0 && rippleEdgePosition < rippleWaveWidth) {
-                        const waveIntensity = (1 - rippleEdgePosition/rippleWaveWidth) * Math.sin(rippleProgress * Math.PI);
-                        // Update the maximum observed glow from ripples
-                        maxRippleFill   = Math.max(maxRippleFill,   waveIntensity);
-                        maxRippleStroke = Math.max(maxRippleStroke, waveIntensity);
+                        const waveIntensity = (1 - rippleEdgePosition / rippleWaveWidth) * Math.sin(rippleProgress * Math.PI);
+                        targetFill   = Math.max(targetFill,   waveIntensity);
+                        targetStroke = Math.max(targetStroke, waveIntensity);
                     }
                 });
 
-                // 3. Determine Final Alpha (The Overriding Logic)
-                // The final alpha is the maximum of the two strongest forces: Hover or Ripple.
-                const finalFillAlpha   = Math.max(bestHoverFill, maxRippleFill);
-                const finalStrokeAlpha = Math.max(bestHoverStroke, maxRippleStroke);
+                // --- apply snap-up / decay-down ---
+                let currentFill   = letterDecayFill[letterIdx];
+                let currentStroke = letterDecayStroke[letterIdx];
 
+                if (targetFill > currentFill) {
+                    currentFill = targetFill;                               // snap up instantly
+                } else {
+                    currentFill = Math.max(targetFill, currentFill - decayStep); // decay toward target
+                }
 
-                if (finalFillAlpha > 0.002 || finalStrokeAlpha > 0.002) {
-                    letterEl.style.color = `rgba(29,211,176,${finalFillAlpha.toFixed(3)})`;
-                    letterEl.style.setProperty('-webkit-text-stroke-color', `rgba(29,211,176,${(0.22+finalStrokeAlpha).toFixed(3)})`);
+                if (targetStroke > currentStroke) {
+                    currentStroke = targetStroke;
+                } else {
+                    currentStroke = Math.max(targetStroke, currentStroke - decayStep);
+                }
+
+                letterDecayFill[letterIdx]   = currentFill;
+                letterDecayStroke[letterIdx] = currentStroke;
+
+                // --- paint the letter ---
+                if (currentFill > 0.002 || currentStroke > 0.002) {
+                    letterEl.style.color = `rgba(29,211,176,${currentFill.toFixed(3)})`;
+                    letterEl.style.setProperty('-webkit-text-stroke-color', `rgba(29,211,176,${(0.22 + currentStroke).toFixed(3)})`);
+                    anyLetterStillGlowing = true;
                 } else {
                     resetLetterToDefault(letterEl);
                 }
             });
 
+            // Keep the loop alive as long as hover/ripples are active OR letters are still fading out
+            const hasActiveAnimation = activeRipples.length > 0 || currentHoverPos !== null || anyLetterStillGlowing;
+
             if (hasActiveAnimation) {
                 animationFrameId = requestAnimationFrame(drawAnimationFrame);
             } else {
-                // Loop is ending — guarantee full cleanup so no teal can persist
-                animationFrameId = null;
+                // Everything has fully faded — final cleanup
+                animationFrameId  = null;
+                lastFrameTimestamp = null;
                 canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
                 letterSpanData.forEach(({ el: letterEl }) => resetLetterToDefault(letterEl));
             }
         }
 
-        function startAnimationLoop() { if (!animationFrameId) animationFrameId = requestAnimationFrame(drawAnimationFrame); }
+        function startAnimationLoop() {
+            if (!animationFrameId) {
+                lastFrameTimestamp = null; // reset so first frame delta is 0
+                animationFrameId = requestAnimationFrame(drawAnimationFrame);
+            }
+        }
 
         function stopHoverGlow() {
             currentHoverPos = null;
-            // Don't early-return when ripples are active — let drawAnimationFrame() drain them
-            // and handle its own cleanup when they expire. Only force-stop if
-            // there are no ripples at all (nothing to animate).
-            if (!activeRipples.length) {
+            // Let the loop keep running so letters can decay naturally.
+            // Only force-stop immediately if there are no ripples AND no letters still glowing.
+            const anyGlowing = letterDecayFill.some(v => v > 0.002);
+            if (!activeRipples.length && !anyGlowing) {
                 if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+                lastFrameTimestamp = null;
                 canvasContext && canvasContext.clearRect(0, 0, glowCanvasElement.width, glowCanvasElement.height);
                 letterSpanData.forEach(({ el: letterEl }) => resetLetterToDefault(letterEl));
             }
@@ -357,19 +400,19 @@ document.addEventListener('DOMContentLoaded', () => {
         (document.fonts ? document.fonts.ready : Promise.resolve()).then(buildLetterGrid);
 
         heroMouseTracker.addEventListener('mousemove', moveEvent => {
-            const heroRect = heroSectionElement.getBoundingClientRect();
+            const heroRect  = heroSectionElement.getBoundingClientRect();
             currentHoverPos = { x: moveEvent.clientX - heroRect.left, y: moveEvent.clientY - heroRect.top };
             startAnimationLoop();
         });
         heroMouseTracker.addEventListener('mouseleave', stopHoverGlow);
         heroMouseTracker.addEventListener('click', clickEvent => {
             const heroRect = heroSectionElement.getBoundingClientRect();
-            activeRipples.push({ 
-                x: clickEvent.clientX - heroRect.left, 
-                y: clickEvent.clientY - heroRect.top, 
-                startTime: performance.now(), 
-                duration: 1400, 
-                maxRadius: Math.hypot(heroSectionElement.offsetWidth, heroSectionElement.offsetHeight) 
+            activeRipples.push({
+                x:         clickEvent.clientX - heroRect.left,
+                y:         clickEvent.clientY - heroRect.top,
+                startTime: performance.now(),
+                duration:  1400,
+                maxRadius: Math.hypot(heroSectionElement.offsetWidth, heroSectionElement.offsetHeight)
             });
             startAnimationLoop();
         });
