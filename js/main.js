@@ -84,13 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typewriterElement) {
         const phraseList = [
             'I do stuff.',
-            'I code.',
-            'I build.',
-            'I learn.',
-            'I code websites.',
-            'I run businesses.',
+            'I build software.',
+            'I build websites.',
+            'I run business.',
             'I do graphics.',
             'I make games.',
+            'Medicine'
         ];
 
         const getRandomDelay = (minMs, maxMs) => Math.random() * (maxMs - minMs) + minMs;
@@ -114,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Finished typing — pause, then switch to deleting
                     if (cursorElement) cursorElement.classList.remove('typing');
                     isDeletingMode = true;
-                    setTimeout(animateTypewriter, getRandomDelay(1400, 2400));
+                    setTimeout(animateTypewriter, getRandomDelay(1400, 2000));
                     return;
                 }
 
