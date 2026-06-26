@@ -7,24 +7,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------
     // 1. MOBILE MENU TOGGLE
     // ----------------------------------------
-    const menuToggle = document.querySelector('.menu-toggle');
-    const navbar     = document.querySelector('.navbar');
+    const menuToggleButton = document.querySelector('.menu-toggle');
+    const navbarElement    = document.querySelector('.navbar');
 
-    if (menuToggle && navbar) {
-        menuToggle.addEventListener('click', () => {
-            const expanded = navbar.classList.toggle('is-active');
-            menuToggle.setAttribute('aria-expanded', expanded);
+    if (menuToggleButton && navbarElement) {
+        menuToggleButton.addEventListener('click', () => {
+            const isExpanded = navbarElement.classList.toggle('is-active');
+            menuToggleButton.setAttribute('aria-expanded', isExpanded);
         });
-        document.querySelectorAll('.navbar a').forEach(link => {
-            link.addEventListener('click', () => {
-                navbar.classList.remove('is-active');
-                menuToggle.setAttribute('aria-expanded', 'false');
+        document.querySelectorAll('.navbar a').forEach(navLink => {
+            navLink.addEventListener('click', () => {
+                navbarElement.classList.remove('is-active');
+                menuToggleButton.setAttribute('aria-expanded', 'false');
             });
         });
-        document.addEventListener('click', e => {
-            if (!navbar.contains(e.target) && !menuToggle.contains(e.target)) {
-                navbar.classList.remove('is-active');
-                menuToggle.setAttribute('aria-expanded', 'false');
+        document.addEventListener('click', clickEvent => {
+            if (!navbarElement.contains(clickEvent.target) && !menuToggleButton.contains(clickEvent.target)) {
+                navbarElement.classList.remove('is-active');
+                menuToggleButton.setAttribute('aria-expanded', 'false');
             }
         });
     }
@@ -33,44 +33,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------
     // 2. CONTACT FORM
     // ----------------------------------------
-    const contactForm = document.querySelector('.contact-form');
-    if (contactForm) {
-        const feedback      = contactForm.querySelector('.form-feedback');
-        const validateEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    const contactFormElement = document.querySelector('.contact-form');
+    if (contactFormElement) {
+        const feedbackDisplay      = contactFormElement.querySelector('.form-feedback');
+        const isValidEmailFormat = (emailValue) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
 
-        contactForm.addEventListener('submit', e => {
-            e.preventDefault();
-            const f_name  = contactForm.querySelector('input[name="name"]');
-            const f_email = contactForm.querySelector('input[name="email"]');
-            const f_msg   = contactForm.querySelector('textarea[name="message"]');
-            [f_name, f_email, f_msg].forEach(f => f.classList.remove('error'));
-            feedback.className = 'form-feedback';
-            feedback.textContent = '';
+        contactFormElement.addEventListener('submit', submitEvent => {
+            submitEvent.preventDefault();
+            const nameInput    = contactFormElement.querySelector('input[name="name"]');
+            const emailInput   = contactFormElement.querySelector('input[name="email"]');
+            const messageInput = contactFormElement.querySelector('textarea[name="message"]');
+            [nameInput, emailInput, messageInput].forEach(field => field.classList.remove('error'));
+            feedbackDisplay.className = 'form-feedback';
+            feedbackDisplay.textContent = '';
 
-            let ok = true;
-            if (!f_name.value.trim())                                     { f_name.classList.add('error');  ok = false; }
-            if (!f_email.value.trim() || !validateEmail(f_email.value.trim())) { f_email.classList.add('error'); ok = false; }
-            if (!f_msg.value.trim())                                      { f_msg.classList.add('error');   ok = false; }
-            if (!ok) {
-                feedback.textContent = 'Please fill out all fields correctly.';
-                feedback.className = 'form-feedback error';
+            let isFormValid = true;
+            if (!nameInput.value.trim())                                      { nameInput.classList.add('error');    isFormValid = false; }
+            if (!emailInput.value.trim() || !isValidEmailFormat(emailInput.value.trim())) { emailInput.classList.add('error');  isFormValid = false; }
+            if (!messageInput.value.trim())                                   { messageInput.classList.add('error'); isFormValid = false; }
+            if (!isFormValid) {
+                feedbackDisplay.textContent = 'Please fill out all fields correctly.';
+                feedbackDisplay.className = 'form-feedback error';
                 return;
             }
 
-            const btn = contactForm.querySelector('button[type="submit"]');
-            btn.disabled = true;
-            btn.textContent = 'Sending…';
+            const submitButton = contactFormElement.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sending…';
             setTimeout(() => {
-                feedback.textContent = "Message sent! I'll get back to you shortly.";
-                feedback.className = 'form-feedback success';
-                contactForm.reset();
-                btn.disabled = false;
-                btn.textContent = 'Send Message';
+                feedbackDisplay.textContent = "Message sent! I'll get back to you shortly.";
+                feedbackDisplay.className = 'form-feedback success';
+                contactFormElement.reset();
+                submitButton.disabled = false;
+                submitButton.textContent = 'Send Message';
             }, 1000);
         });
 
-        contactForm.querySelectorAll('input, textarea').forEach(f =>
-            f.addEventListener('input', () => f.classList.remove('error'))
+        contactFormElement.querySelectorAll('input, textarea').forEach(formField =>
+            formField.addEventListener('input', () => formField.classList.remove('error'))
         );
     }
 
@@ -78,11 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------
     // 3. TYPEWRITER
     // ----------------------------------------
-    const twEl     = document.getElementById('typewriter');
-    const cursorEl = document.querySelector('.cursor');
+    const typewriterElement = document.getElementById('typewriter');
+    const cursorElement     = document.querySelector('.cursor');
 
-    if (twEl) {
-        const phrases = [
+    if (typewriterElement) {
+        const phraseList = [
             'I do stuff.',
             'I code.',
             'I build.',
@@ -93,257 +93,289 @@ document.addEventListener('DOMContentLoaded', () => {
             'I make games.',
         ];
 
-        const rand = (a, b) => Math.random() * (b - a) + a;
+        const getRandomDelay = (minMs, maxMs) => Math.random() * (maxMs - minMs) + minMs;
 
-        let phraseIndex = 0;
-        let charIndex   = 0;
-        let isDeleting  = false;
+        let currentPhraseIndex = 0;
+        let currentCharIndex   = 0;
+        let isDeletingMode     = false;
 
-        function typeWriter() {
-            const phrase = phrases[phraseIndex];
-            const ch     = phrase.charAt(charIndex);
+        function animateTypewriter() {
+            const currentPhrase = phraseList[currentPhraseIndex];
+            const currentChar   = currentPhrase.charAt(currentCharIndex);
 
-            if (cursorEl) cursorEl.classList.add('typing');
+            if (cursorElement) cursorElement.classList.add('typing');
 
-            if (!isDeleting) {
+            if (!isDeletingMode) {
                 // Add next character using charAt — same approach as the reference
-                twEl.innerHTML += ch;
-                charIndex++;
+                typewriterElement.innerHTML += currentChar;
+                currentCharIndex++;
 
-                if (charIndex === phrase.length) {
+                if (currentCharIndex === currentPhrase.length) {
                     // Finished typing — pause, then switch to deleting
-                    if (cursorEl) cursorEl.classList.remove('typing');
-                    isDeleting = true;
-                    setTimeout(typeWriter, rand(1400, 2400));
+                    if (cursorElement) cursorElement.classList.remove('typing');
+                    isDeletingMode = true;
+                    setTimeout(animateTypewriter, getRandomDelay(1400, 2400));
                     return;
                 }
 
-                let delay = rand(60, 140);
-                if (Math.random() < 0.08) delay += rand(200, 500); // occasional hesitation
-                setTimeout(typeWriter, delay);
+                let delayMs = getRandomDelay(60, 140);
+                if (Math.random() < 0.08) delayMs += getRandomDelay(200, 500); // occasional hesitation
+                setTimeout(animateTypewriter, delayMs);
 
             } else {
                 // Delete one character by slicing innerHTML
-                twEl.innerHTML = phrase.substring(0, charIndex - 1);
-                charIndex--;
+                typewriterElement.innerHTML = currentPhrase.substring(0, currentCharIndex - 1);
+                currentCharIndex--;
 
-                if (charIndex === 0) {
+                if (currentCharIndex === 0) {
                     // Finished deleting — move to next phrase
-                    if (cursorEl) cursorEl.classList.remove('typing');
-                    isDeleting  = false;
-                    phraseIndex = (phraseIndex + 1) % phrases.length;
-                    setTimeout(typeWriter, rand(300, 600));
+                    if (cursorElement) cursorElement.classList.remove('typing');
+                    isDeletingMode  = false;
+                    currentPhraseIndex = (currentPhraseIndex + 1) % phraseList.length;
+                    setTimeout(animateTypewriter, getRandomDelay(300, 600));
                     return;
                 }
 
-                let delay = rand(40, 85);
-                if (Math.random() < 0.05) delay += rand(150, 350); // occasional stumble
-                setTimeout(typeWriter, delay);
+                let delayMs = getRandomDelay(40, 85);
+                if (Math.random() < 0.05) delayMs += getRandomDelay(150, 350); // occasional stumble
+                setTimeout(animateTypewriter, delayMs);
             }
         }
 
         // Kick off after short initial delay
-        setTimeout(typeWriter, 800);
+        setTimeout(animateTypewriter, 800);
     }
 
 
     // ----------------------------------------
     // 4. HERO ZAP GRID + HOVER / CLICK EFFECTS
     // ----------------------------------------
-    const zapGrid     = document.getElementById('zapGrid');
-    const glowCanvas  = document.getElementById('heroGlow');
-    const heroMouse   = document.getElementById('heroMouse');
-    const heroSection = document.querySelector('.hero-section');
+    const zapGridContainer = document.getElementById('zapGrid');
+    const glowCanvasElement = document.getElementById('heroGlow');
+    const heroMouseTracker = document.getElementById('heroMouse');
+    const heroSectionElement = document.querySelector('.hero-section');
 
-    if (zapGrid && glowCanvas && heroMouse && heroSection) {
+    if (zapGridContainer && glowCanvasElement && heroMouseTracker && heroSectionElement) {
 
-        const LETTERS      = ['Z', 'A', 'P'];
-        const LETTER_GAP   = 0.05;
-        const GROUP_GAP    = 0.15;
-        const HOVER_RADIUS = 200;
+        const GRID_LETTERS       = ['Z', 'A', 'P'];
+        const LETTER_SPACING     = 0.02;
+        const GROUP_SPACING      = 0.2;
+        const HOVER_GLOW_RADIUS = 200;
 
-        let spanData = [];
-        let ctx      = null;
-        let ripples  = [];
-        let rafId    = null;
-        let hoverPos = null;
+        let letterSpanData = [];
+        let canvasContext  = null;
+        let activeRipples  = [];
+        let animationFrameId = null;
+        let currentHoverPos = null;
 
-        function resizeCanvas() {
-            glowCanvas.width  = heroSection.offsetWidth;
-            glowCanvas.height = heroSection.offsetHeight;
-            ctx = glowCanvas.getContext('2d');
+        function resizeGlowCanvas() {
+            glowCanvasElement.width  = heroSectionElement.offsetWidth;
+            glowCanvasElement.height = heroSectionElement.offsetHeight;
+            canvasContext = glowCanvasElement.getContext('2d');
         }
 
         // Measure a string using the same font as .hero-zap span
-        function measureSpan(text) {
-            const el = document.createElement('span');
-            el.textContent = text;
+        function measureLetterDimensions(textToMeasure) {
+            const measureElement = document.createElement('span');
+            measureElement.textContent = textToMeasure;
             // Position off-screen but still in DOM so font applies
-            el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;white-space:nowrap;';
+            measureElement.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;white-space:nowrap;';
             // Mirror font properties from .hero-zap span
-            el.style.fontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-heading').trim() || "'Trajan Supreme',serif";
-            el.style.fontSize   = 'clamp(5rem, 11vw, 9rem)';
-            el.style.fontWeight = '700';
-            el.style.fontStyle  = 'italic';
-            el.style.lineHeight = '1';
-            document.body.appendChild(el);
-            const w = el.offsetWidth;
-            const h = el.offsetHeight;
-            document.body.removeChild(el);
-            return { w, h };
+            measureElement.style.fontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-heading').trim() || "'Trajan Supreme',serif";
+            measureElement.style.fontSize   = 'clamp(5rem, 11vw, 9rem)';
+            measureElement.style.fontWeight = '700';
+            measureElement.style.lineHeight = '1';
+            document.body.appendChild(measureElement);
+            const measuredWidth = measureElement.offsetWidth;
+            const measuredHeight = measureElement.offsetHeight;
+            document.body.removeChild(measureElement);
+            return { w: measuredWidth, h: measuredHeight };
         }
 
-        function buildGrid() {
-            zapGrid.querySelectorAll('span').forEach(s => s.remove());
-            spanData = [];
-            resizeCanvas();
+        function buildLetterGrid() {
+            zapGridContainer.querySelectorAll('span').forEach(spanEl => spanEl.remove());
+            letterSpanData = [];
+            resizeGlowCanvas();
 
-            const W = heroSection.offsetWidth;
-            const H = heroSection.offsetHeight;
+            const sectionWidth = heroSectionElement.offsetWidth;
+            const sectionHeight = heroSectionElement.offsetHeight;
 
-            const { w: wW, h: rowH } = measureSpan('W');
-            if (!wW || !rowH) return;
+            const { w: measureCharWidth, h: rowHeight } = measureLetterDimensions('W');
+            if (!measureCharWidth || !rowHeight) return;
 
             // Font size from actual rendered height is more reliable
             // Use the W glyph offsetWidth as proxy for em unit
             // Actually measure font-size from a span directly
-            const fszProbe = document.createElement('span');
-            fszProbe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;font-family:\'Trajan Supreme\',serif;font-size:clamp(5rem,11vw,9rem);font-weight:700;font-style:italic;line-height:1;';
-            document.body.appendChild(fszProbe);
-            const fsz = parseFloat(getComputedStyle(fszProbe).fontSize);
-            document.body.removeChild(fszProbe);
+            const fontSizeProbe = document.createElement('span');
+            fontSizeProbe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;font-family:\'Trajan Supreme\',serif;font-size:clamp(5rem,11vw,9rem);font-weight:700;line-height:1;';
+            document.body.appendChild(fontSizeProbe);
+            const calculatedFontSize = parseFloat(getComputedStyle(fontSizeProbe).fontSize);
+            document.body.removeChild(fontSizeProbe);
 
-            const widths = {};
-            LETTERS.forEach(l => { widths[l] = measureSpan(l).w; });
+            const letterWidths = {};
+            GRID_LETTERS.forEach(letter => { letterWidths[letter] = measureLetterDimensions(letter).w; });
 
-            const rows     = Math.ceil(H / rowH) + 1;
-            const fragment = document.createDocumentFragment();
+            const totalRows = Math.ceil(sectionHeight / rowHeight) + 1;
+            const documentFragment = document.createDocumentFragment();
 
-            for (let row = 0; row < rows; row++) {
-                const y       = row * rowH;
-                const offsetX = (row % 2 === 1) ? fsz * 0.6 : 0;
-                let x = offsetX - fsz * 0.5;
-                let li = 0;
+            for (let rowIndex = 0; rowIndex < totalRows; rowIndex++) {
+                const yPosition = rowIndex * rowHeight;
+                const rowOffsetX = (rowIndex % 2 === 1) ? calculatedFontSize * 0.6 : 0;
+                let xPosition = rowOffsetX - calculatedFontSize * 0.5;
+                let letterIndex = 0;
 
-                while (x < W + fsz) {
-                    const letter = LETTERS[li % LETTERS.length];
-                    const lw     = widths[letter];
-                    const span   = document.createElement('span');
-                    span.textContent = letter;
-                    span.style.left  = x + 'px';
-                    span.style.top   = y + 'px';
-                    fragment.appendChild(span);
-                    spanData.push({ el: span, cx: x + lw / 2, cy: y + rowH / 2 });
-                    x += lw + (li % 3 === 2 ? fsz * GROUP_GAP : fsz * LETTER_GAP);
-                    li++;
+                while (xPosition < sectionWidth + calculatedFontSize) {
+                    const currentLetter = GRID_LETTERS[letterIndex % GRID_LETTERS.length];
+                    const letterWidth = letterWidths[currentLetter];
+                    const letterSpanElement = document.createElement('span');
+                    letterSpanElement.textContent = currentLetter;
+                    letterSpanElement.style.left  = xPosition + 'px';
+                    letterSpanElement.style.top   = yPosition + 'px';
+                    documentFragment.appendChild(letterSpanElement);
+                    letterSpanData.push({ el: letterSpanElement, cx: xPosition + letterWidth / 2, cy: yPosition + rowHeight / 2 });
+                    xPosition += letterWidth + (letterIndex % 3 === 2 ? calculatedFontSize * GROUP_SPACING : calculatedFontSize * LETTER_SPACING);
+                    letterIndex++;
                 }
             }
 
-            zapGrid.appendChild(fragment);
+            zapGridContainer.appendChild(documentFragment);
 
             // Recalculate centres from real rendered rects
-            const hr = heroSection.getBoundingClientRect();
-            spanData.forEach(d => {
-                const r = d.el.getBoundingClientRect();
-                d.cx = r.left - hr.left + r.width  / 2;
-                d.cy = r.top  - hr.top  + r.height / 2;
+            const heroRect = heroSectionElement.getBoundingClientRect();
+            letterSpanData.forEach(spanDataPoint => {
+                const spanRect = spanDataPoint.el.getBoundingClientRect();
+                spanDataPoint.cx = spanRect.left - heroRect.left + spanRect.width  / 2;
+                spanDataPoint.cy = spanRect.top  - heroRect.top  + spanRect.height / 2;
             });
         }
 
-        function setLetterDefault(el) {
-            el.style.color = 'transparent';
-            el.style.setProperty('-webkit-text-stroke-color', 'rgba(41,41,41,0.22)');
+        function resetLetterToDefault(letterElement) {
+            letterElement.style.color = 'transparent';
+            letterElement.style.setProperty('-webkit-text-stroke-color', '#29292925');
         }
 
-        function frame(now) {
-            if (!ctx) return;
-            const W = glowCanvas.width, H = glowCanvas.height;
-            ctx.clearRect(0, 0, W, H);
-            ripples = ripples.filter(r => now - r.t < r.dur);
+        function drawAnimationFrame(currentTimestamp) {
+            if (!canvasContext) return;
+            const canvasWidth = glowCanvasElement.width, canvasHeight = glowCanvasElement.height;
+            canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+            activeRipples = activeRipples.filter(ripple => currentTimestamp - ripple.startTime < ripple.duration);
 
-            if (hoverPos) {
-                const g = ctx.createRadialGradient(hoverPos.x, hoverPos.y, 0, hoverPos.x, hoverPos.y, HOVER_RADIUS);
-                g.addColorStop(0,   'rgba(29,211,176,0.18)');
-                g.addColorStop(0.5, 'rgba(29,211,176,0.07)');
-                g.addColorStop(1,   'rgba(29,211,176,0)');
-                ctx.fillStyle = g;
-                ctx.fillRect(0, 0, W, H);
+            const hasActiveAnimation = activeRipples.length > 0 || currentHoverPos !== null;
+
+            if (currentHoverPos) {
+                const hoverGradient = canvasContext.createRadialGradient(currentHoverPos.x, currentHoverPos.y, 0, currentHoverPos.x, currentHoverPos.y, HOVER_GLOW_RADIUS);
+                hoverGradient.addColorStop(0,   'rgba(29,211,176,0.3)');
+                hoverGradient.addColorStop(0.3, 'rgba(29,211,176,0.07)');
+                hoverGradient.addColorStop(1,   'rgba(29,211,176,0.0)');
+                canvasContext.fillStyle = hoverGradient;
+                canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
             }
 
-            ripples.forEach(r => {
-                const p  = (now - r.t) / r.dur;
-                const e  = p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p+2,2)/2;
-                const op = Math.sin(p * Math.PI);
-                const g  = ctx.createRadialGradient(r.x, r.y, 0, r.x, r.y, e * r.maxR);
-                g.addColorStop(0,   `rgba(29,211,176,${(op*0.22).toFixed(3)})`);
-                g.addColorStop(0.6, `rgba(29,211,176,${(op*0.09).toFixed(3)})`);
-                g.addColorStop(1,   'rgba(29,211,176,0)');
-                ctx.fillStyle = g;
-                ctx.fillRect(0, 0, W, H);
+            activeRipples.forEach(ripple => {
+                const rippleProgress = (currentTimestamp - ripple.startTime) / ripple.duration;
+                const easeOutQuadratic = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
+                const oscillationAlpha = Math.sin(rippleProgress * Math.PI);
+                const rippleGradient = canvasContext.createRadialGradient(ripple.x, ripple.y, 0, ripple.x, ripple.y, easeOutQuadratic * ripple.maxRadius);
+                rippleGradient.addColorStop(0,   `rgba(29,211,176,${(oscillationAlpha*0.22).toFixed(3)})`);
+                rippleGradient.addColorStop(0.6, `rgba(29,211,176,${(oscillationAlpha*0.09).toFixed(3)})`);
+                rippleGradient.addColorStop(1,   'rgba(29,211,176,0)');
+                canvasContext.fillStyle = rippleGradient;
+                canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
             });
 
-            spanData.forEach(({ el, cx, cy }) => {
-                let fill = 0, stroke = 0;
+            letterSpanData.forEach(({ el: letterEl, cx: letterCenterX, cy: letterCenterY }) => {
+                // 1. Calculate potential glow from HOVER (Max value)
+                let bestHoverFill = 0;
+                let bestHoverStroke = 0;
 
-                if (hoverPos) {
-                    const d = Math.hypot(cx - hoverPos.x, cy - hoverPos.y);
-                    if (d < HOVER_RADIUS) {
-                        const t = 1 - d / HOVER_RADIUS;
-                        fill   = Math.max(fill,   t * t * 0.15);
-                        stroke = Math.max(stroke, t * 0.28);
+                if (currentHoverPos) {
+                    const distanceFromHover = Math.hypot(letterCenterX - currentHoverPos.x, letterCenterY - currentHoverPos.y);
+                    if (distanceFromHover < HOVER_GLOW_RADIUS) {
+                        const proximityRatio = 1 - distanceFromHover / HOVER_GLOW_RADIUS;
+                        // Calculate the glow intensity only from hover
+                        bestHoverFill   = Math.max(bestHoverFill,   proximityRatio * proximityRatio);
+                        bestHoverStroke = Math.max(bestHoverStroke, proximityRatio * 1.5);
                     }
                 }
 
-                ripples.forEach(r => {
-                    const p   = (now - r.t) / r.dur;
-                    const e   = p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p+2,2)/2;
-                    const beh = e * r.maxR - Math.hypot(cx - r.x, cy - r.y);
-                    const bw  = r.maxR * 0.3;
-                    if (beh > 0 && beh < bw) {
-                        const s = (1 - beh/bw) * Math.sin(p * Math.PI);
-                        fill   = Math.max(fill,   s * 0.25);
-                        stroke = Math.max(stroke, s * 0.38);
+                // 2. Calculate potential glow from RIPPLING (Max value across all ripples)
+                let maxRippleFill = 0;
+                let maxRippleStroke = 0;
+
+                activeRipples.forEach(ripple => {
+                    const rippleProgress = (currentTimestamp - ripple.startTime) / ripple.duration;
+                    const easeOutQuadratic = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
+                    const rippleEdgePosition = easeOutQuadratic * ripple.maxRadius - Math.hypot(letterCenterX - ripple.x, letterCenterY - ripple.y);
+                    const rippleWaveWidth = ripple.maxRadius * 0.3;
+
+                    if (rippleEdgePosition > 0 && rippleEdgePosition < rippleWaveWidth) {
+                        const waveIntensity = (1 - rippleEdgePosition/rippleWaveWidth) * Math.sin(rippleProgress * Math.PI);
+                        // Update the maximum observed glow from ripples
+                        maxRippleFill   = Math.max(maxRippleFill,   waveIntensity);
+                        maxRippleStroke = Math.max(maxRippleStroke, waveIntensity);
                     }
                 });
 
-                if (fill > 0.002 || stroke > 0.002) {
-                    el.style.color = `rgba(29,211,176,${fill.toFixed(3)})`;
-                    el.style.setProperty('-webkit-text-stroke-color', `rgba(29,211,176,${(0.22+stroke).toFixed(3)})`);
+                // 3. Determine Final Alpha (The Overriding Logic)
+                // The final alpha is the maximum of the two strongest forces: Hover or Ripple.
+                const finalFillAlpha   = Math.max(bestHoverFill, maxRippleFill);
+                const finalStrokeAlpha = Math.max(bestHoverStroke, maxRippleStroke);
+
+
+                if (finalFillAlpha > 0.002 || finalStrokeAlpha > 0.002) {
+                    letterEl.style.color = `rgba(29,211,176,${finalFillAlpha.toFixed(3)})`;
+                    letterEl.style.setProperty('-webkit-text-stroke-color', `rgba(29,211,176,${(0.22+finalStrokeAlpha).toFixed(3)})`);
                 } else {
-                    setLetterDefault(el);
+                    resetLetterToDefault(letterEl);
                 }
             });
 
-            rafId = (ripples.length || hoverPos) ? requestAnimationFrame(frame) : null;
-        }
-
-        function startLoop() { if (!rafId) rafId = requestAnimationFrame(frame); }
-
-        function stopGlow() {
-            hoverPos = null;
-            if (!ripples.length) {
-                if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-                ctx && ctx.clearRect(0, 0, glowCanvas.width, glowCanvas.height);
-                spanData.forEach(({ el }) => setLetterDefault(el));
+            if (hasActiveAnimation) {
+                animationFrameId = requestAnimationFrame(drawAnimationFrame);
+            } else {
+                // Loop is ending — guarantee full cleanup so no teal can persist
+                animationFrameId = null;
+                canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+                letterSpanData.forEach(({ el: letterEl }) => resetLetterToDefault(letterEl));
             }
         }
 
-        (document.fonts ? document.fonts.ready : Promise.resolve()).then(buildGrid);
+        function startAnimationLoop() { if (!animationFrameId) animationFrameId = requestAnimationFrame(drawAnimationFrame); }
 
-        heroMouse.addEventListener('mousemove', e => {
-            const r  = heroSection.getBoundingClientRect();
-            hoverPos = { x: e.clientX - r.left, y: e.clientY - r.top };
-            startLoop();
+        function stopHoverGlow() {
+            currentHoverPos = null;
+            // Don't early-return when ripples are active — let drawAnimationFrame() drain them
+            // and handle its own cleanup when they expire. Only force-stop if
+            // there are no ripples at all (nothing to animate).
+            if (!activeRipples.length) {
+                if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+                canvasContext && canvasContext.clearRect(0, 0, glowCanvasElement.width, glowCanvasElement.height);
+                letterSpanData.forEach(({ el: letterEl }) => resetLetterToDefault(letterEl));
+            }
+        }
+
+        (document.fonts ? document.fonts.ready : Promise.resolve()).then(buildLetterGrid);
+
+        heroMouseTracker.addEventListener('mousemove', moveEvent => {
+            const heroRect = heroSectionElement.getBoundingClientRect();
+            currentHoverPos = { x: moveEvent.clientX - heroRect.left, y: moveEvent.clientY - heroRect.top };
+            startAnimationLoop();
         });
-        heroMouse.addEventListener('mouseleave', stopGlow);
-        heroMouse.addEventListener('click', e => {
-            const r = heroSection.getBoundingClientRect();
-            ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now(), dur: 1400, maxR: Math.hypot(heroSection.offsetWidth, heroSection.offsetHeight) });
-            startLoop();
+        heroMouseTracker.addEventListener('mouseleave', stopHoverGlow);
+        heroMouseTracker.addEventListener('click', clickEvent => {
+            const heroRect = heroSectionElement.getBoundingClientRect();
+            activeRipples.push({ 
+                x: clickEvent.clientX - heroRect.left, 
+                y: clickEvent.clientY - heroRect.top, 
+                startTime: performance.now(), 
+                duration: 1400, 
+                maxRadius: Math.hypot(heroSectionElement.offsetWidth, heroSectionElement.offsetHeight) 
+            });
+            startAnimationLoop();
         });
 
-        let rto;
-        window.addEventListener('resize', () => { clearTimeout(rto); rto = setTimeout(buildGrid, 150); });
+        let resizeTimeoutId;
+        window.addEventListener('resize', () => { clearTimeout(resizeTimeoutId); resizeTimeoutId = setTimeout(buildLetterGrid, 150); });
     }
 
 
@@ -351,12 +383,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. SCROLL ANIMATIONS
     // ----------------------------------------
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        const obs = new IntersectionObserver((entries, o) => {
-            entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('visible'); o.unobserve(en.target); } });
+        const scrollObserver = new IntersectionObserver((visibleEntries, observerInstance) => {
+            visibleEntries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observerInstance.unobserve(entry.target); } });
         }, { threshold: 0.15 });
-        document.querySelectorAll('.section').forEach(s => obs.observe(s));
+        document.querySelectorAll('.section').forEach(sectionElement => scrollObserver.observe(sectionElement));
     } else {
-        document.querySelectorAll('.section').forEach(s => s.classList.add('visible'));
+        document.querySelectorAll('.section').forEach(sectionElement => sectionElement.classList.add('visible'));
     }
 
 });

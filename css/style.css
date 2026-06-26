@@ -222,11 +222,16 @@ section {
     font-size: 1.2rem;
 }
 
-/* Layer 4: button */
+/* Layer 4: button — wrapper passes pointer events through so tracker still fires */
 .hero-cta {
     position: relative;
-    z-index: 4;
+    z-index: 6;
     margin-top: 8px;
+    pointer-events: none;
+}
+
+.hero-cta .button {
+    pointer-events: all;
 }
 
 /* Layer 5: full-cover mouse tracker */
