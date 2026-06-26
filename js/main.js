@@ -163,20 +163,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const HOVER_GLOW_RADIUS = 200;
 
         // Alpha decay: how much glow drains per millisecond when no active source drives a letter.
-        // At 0.0008 a fully-lit letter fades to invisible over ~1250 ms.
         const GLOW_DECAY_RATE_PER_MS = 0.005;
+        // Epsilon threshold: alpha values at or below this are considered visually zero
+        const DECAY_EPSILON = 0.0005;
 
-        let letterSpanData   = [];
-        let canvasContext    = null;
-        let activeRipples    = [];
-        let animationFrameId = null;
-        let currentHoverPos  = null;
+        let letterSpanData     = [];
+        let canvasContext      = null;
+        let activeRipples      = [];
+        let animationFrameId   = null;
+        let currentHoverPos    = null;
         let lastFrameTimestamp = null; // used to compute delta-time for decay
 
         // Per-letter persistent glow state — decays smoothly between frames
-        // These are kept in parallel arrays (same index as letterSpanData) for speed
+        // Parallel arrays (same index as letterSpanData) for speed
         let letterDecayFill   = []; // current decayed fill alpha for each letter
         let letterDecayStroke = []; // current decayed stroke alpha for each letter
+
+        // Returns true if ALL letters have decayed to at or below DECAY_EPSILON
+        function isFullyDecayed() {
+            return letterDecayFill.every(alpha => alpha <= DECAY_EPSILON) &&
+                   letterDecayStroke.every(alpha => alpha <= DECAY_EPSILON);
+        }
 
         function resizeGlowCanvas() {
             glowCanvasElement.width  = heroSectionElement.offsetWidth;
@@ -204,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function buildLetterGrid() {
             zapGridContainer.querySelectorAll('span').forEach(spanEl => spanEl.remove());
-            letterSpanData   = [];
+            letterSpanData    = [];
             letterDecayFill   = [];
             letterDecayStroke = [];
             resizeGlowCanvas();
@@ -225,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const letterWidths = {};
             GRID_LETTERS.forEach(letter => { letterWidths[letter] = measureLetterDimensions(letter).w; });
 
-            const totalRows       = Math.ceil(sectionHeight / rowHeight) + 1;
+            const totalRows        = Math.ceil(sectionHeight / rowHeight) + 1;
             const documentFragment = document.createDocumentFragment();
 
             for (let rowIndex = 0; rowIndex < totalRows; rowIndex++) {
@@ -270,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!canvasContext) return;
 
             // Delta-time in ms since last frame — used to advance the decay
-            const deltaMs = lastFrameTimestamp !== null ? currentTimestamp - lastFrameTimestamp : 0;
+            const deltaMs  = lastFrameTimestamp !== null ? currentTimestamp - lastFrameTimestamp : 0;
             lastFrameTimestamp = currentTimestamp;
             const decayStep = GLOW_DECAY_RATE_PER_MS * deltaMs;
 
@@ -306,8 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. Compute the target alpha driven by hover/ripples this frame.
             // 2. If target > current decayed value → snap up immediately (responsive).
             // 3. If target < current decayed value → drain toward target by decayStep (smooth fade).
-            let anyLetterStillGlowing = false;
-
             letterSpanData.forEach(({ el: letterEl, cx: letterCenterX, cy: letterCenterY }, letterIdx) => {
                 // --- compute this frame's driven target ---
                 let targetFill   = 0;
@@ -323,8 +328,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 activeRipples.forEach(ripple => {
-                    const rippleProgress   = (currentTimestamp - ripple.startTime) / ripple.duration;
-                    const easeOutQuadratic = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
+                    const rippleProgress     = (currentTimestamp - ripple.startTime) / ripple.duration;
+                    const easeOutQuadratic   = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
                     const rippleEdgePosition = easeOutQuadratic * ripple.maxRadius - Math.hypot(letterCenterX - ripple.x, letterCenterY - ripple.y);
                     const rippleWaveWidth    = ripple.maxRadius * 0.3;
                     if (rippleEdgePosition > 0 && rippleEdgePosition < rippleWaveWidth) {
@@ -339,9 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 let currentStroke = letterDecayStroke[letterIdx];
 
                 if (targetFill > currentFill) {
-                    currentFill = targetFill;                               // snap up instantly
+                    currentFill = targetFill;                                        // snap up instantly
                 } else {
-                    currentFill = Math.max(targetFill, currentFill - decayStep); // decay toward target
+                    currentFill = Math.max(targetFill, currentFill - decayStep);    // decay toward target
                 }
 
                 if (targetStroke > currentStroke) {
@@ -350,27 +355,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentStroke = Math.max(targetStroke, currentStroke - decayStep);
                 }
 
+                // Hard-clamp to exactly 0 once below epsilon so no float remainder
+                // leaks into the paint step and causes persistent teal on glyph tips
+                currentFill   = currentFill   <= DECAY_EPSILON ? 0 : currentFill;
+                currentStroke = currentStroke <= DECAY_EPSILON ? 0 : currentStroke;
+
                 letterDecayFill[letterIdx]   = currentFill;
                 letterDecayStroke[letterIdx] = currentStroke;
 
                 // --- paint the letter ---
-                if (currentFill > 0.002 || currentStroke > 0.002) {
+                if (currentFill > 0 || currentStroke > 0) {
                     letterEl.style.color = `rgba(29,211,176,${currentFill.toFixed(3)})`;
                     letterEl.style.setProperty('-webkit-text-stroke-color', `rgba(29,211,176,${(0.22 + currentStroke).toFixed(3)})`);
-                    anyLetterStillGlowing = true;
                 } else {
                     resetLetterToDefault(letterEl);
                 }
             });
 
-            // Keep the loop alive as long as hover/ripples are active OR letters are still fading out
-            const hasActiveAnimation = activeRipples.length > 0 || currentHoverPos !== null || anyLetterStillGlowing;
+            // Keep the loop alive while there are input sources OR letters haven't fully decayed
+            const hasInputSource   = activeRipples.length > 0 || currentHoverPos !== null;
+            const shouldKeepLooping = hasInputSource || !isFullyDecayed();
 
-            if (hasActiveAnimation) {
+            if (shouldKeepLooping) {
                 animationFrameId = requestAnimationFrame(drawAnimationFrame);
             } else {
-                // Everything has fully faded — final cleanup
-                animationFrameId  = null;
+                // Everything has fully decayed past epsilon — final hard cleanup
+                animationFrameId   = null;
                 lastFrameTimestamp = null;
                 canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
                 letterSpanData.forEach(({ el: letterEl }) => resetLetterToDefault(letterEl));
@@ -386,15 +396,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function stopHoverGlow() {
             currentHoverPos = null;
-            // Let the loop keep running so letters can decay naturally.
-            // Only force-stop immediately if there are no ripples AND no letters still glowing.
-            const anyGlowing = letterDecayFill.some(v => v > 0.002);
-            if (!activeRipples.length && !anyGlowing) {
+            // If everything is already decayed, no need to keep the loop running
+            if (isFullyDecayed()) {
                 if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
                 lastFrameTimestamp = null;
                 canvasContext && canvasContext.clearRect(0, 0, glowCanvasElement.width, glowCanvasElement.height);
                 letterSpanData.forEach(({ el: letterEl }) => resetLetterToDefault(letterEl));
+                return;
             }
+            // Otherwise let the loop keep running — it will decay naturally and stop itself
         }
 
         (document.fonts ? document.fonts.ready : Promise.resolve()).then(buildLetterGrid);
