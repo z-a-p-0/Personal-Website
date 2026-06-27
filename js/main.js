@@ -474,57 +474,61 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', () => { clearTimeout(resizeTimeoutId); resizeTimeoutId = setTimeout(buildLetterGrid, 150); });
     }
 
-
     // ----------------------------------------
-    // 5. BUTTON PROXIMITY HOVER + CLICK
+    // 5. PRIMARY BUTTON POSITION-AWARE RIPPLE
     // ----------------------------------------
-    // When the cursor is within BUTTON_PROXIMITY_PX of a button's border,
-    // apply the same hover styles via a class, and forward clicks to the button.
-    const BUTTON_PROXIMITY_PX = 10;
+    // On mouseenter: a yellow blob expands from the cursor's entry point.
+    // On mouseleave: the blob contracts back to the cursor's exit point.
+    // The blob's top/left are set to the cursor position; transform: translate(-50%,-50%)
+    // keeps it centred on that point. Width/height transition handles the grow/shrink.
 
-    // Returns true if the point (mouseX, mouseY) is within `margin` px of the button's border
-    function isWithinButtonProximity(buttonRect, mouseX, mouseY, margin) {
-        const expandedLeft   = buttonRect.left   - margin;
-        const expandedRight  = buttonRect.right  + margin;
-        const expandedTop    = buttonRect.top    - margin;
-        const expandedBottom = buttonRect.bottom + margin;
-        return mouseX >= expandedLeft && mouseX <= expandedRight &&
-               mouseY >= expandedTop  && mouseY <= expandedBottom;
+    // Blob needs to be large enough to cover the whole button from any corner entry point.
+    // The diagonal of the button is the maximum distance, so we overshoot it a bit.
+    function getButtonBlobFullSize(buttonEl) {
+        return Math.max(buttonEl.offsetWidth, buttonEl.offsetHeight) * 2.5 + 'px';
     }
 
-    // Returns true if the point is actually inside the button (no proximity margin needed)
-    function isInsideButton(buttonRect, mouseX, mouseY) {
-        return mouseX >= buttonRect.left && mouseX <= buttonRect.right &&
-               mouseY >= buttonRect.top  && mouseY <= buttonRect.bottom;
-    }
+    document.querySelectorAll('.button-primary').forEach(buttonEl => {
 
-    document.querySelectorAll('.button').forEach(buttonElement => {
-        document.addEventListener('mousemove', proximityMoveEvent => {
-            const buttonRect = buttonElement.getBoundingClientRect();
-            const mouseX     = proximityMoveEvent.clientX;
-            const mouseY     = proximityMoveEvent.clientY;
+        // Wrap text in a span so it sits above the blob via z-index (CSS handles this)
+        if (!buttonEl.querySelector('span')) {
+            buttonEl.innerHTML = `<span>${buttonEl.innerHTML}</span>`;
+        }
 
-            // Only apply proximity class when outside the button but within the margin
-            // (inside the button the native :hover already handles it)
-            if (!isInsideButton(buttonRect, mouseX, mouseY) &&
-                 isWithinButtonProximity(buttonRect, mouseX, mouseY, BUTTON_PROXIMITY_PX)) {
-                buttonElement.classList.add('is-proximity-hovered');
-            } else {
-                buttonElement.classList.remove('is-proximity-hovered');
-            }
-        });
+        // Create the ripple blob element and append it inside the button
+        const rippleBlobEl = document.createElement('span');
+        rippleBlobEl.classList.add('button-ripple-blob');
+        rippleBlobEl.style.width  = '0';
+        rippleBlobEl.style.height = '0';
+        buttonEl.appendChild(rippleBlobEl);
 
-        document.addEventListener('click', proximityClickEvent => {
-            const buttonRect = buttonElement.getBoundingClientRect();
-            const mouseX     = proximityClickEvent.clientX;
-            const mouseY     = proximityClickEvent.clientY;
+        function getCursorPositionRelativeToButton(mouseEvent) {
+            const buttonRect = buttonEl.getBoundingClientRect();
+            return {
+                x: mouseEvent.clientX - buttonRect.left,
+                y: mouseEvent.clientY - buttonRect.top
+            };
+        }
 
-            // Forward the click to the button if within proximity but not already inside it
-            if (!isInsideButton(buttonRect, mouseX, mouseY) &&
-                 isWithinButtonProximity(buttonRect, mouseX, mouseY, BUTTON_PROXIMITY_PX)) {
-                buttonElement.click();
-            }
-        });
+        function expandBlobFromPosition(mouseEvent) {
+            const cursorPos = getCursorPositionRelativeToButton(mouseEvent);
+            rippleBlobEl.style.top    = cursorPos.y + 'px';
+            rippleBlobEl.style.left   = cursorPos.x + 'px';
+            const fullSize = getButtonBlobFullSize(buttonEl);
+            rippleBlobEl.style.width  = fullSize;
+            rippleBlobEl.style.height = fullSize;
+        }
+
+        function contractBlobToPosition(mouseEvent) {
+            const cursorPos = getCursorPositionRelativeToButton(mouseEvent);
+            rippleBlobEl.style.top    = cursorPos.y + 'px';
+            rippleBlobEl.style.left   = cursorPos.x + 'px';
+            rippleBlobEl.style.width  = '0';
+            rippleBlobEl.style.height = '0';
+        }
+
+        buttonEl.addEventListener('mouseenter', expandBlobFromPosition);
+        buttonEl.addEventListener('mouseleave', contractBlobToPosition);
     });
 
 
