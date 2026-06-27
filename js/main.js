@@ -166,6 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Epsilon threshold: alpha values at or below this are considered visually zero
         const DECAY_EPSILON = 0.0005;
 
+        // Sentinel value stored in ripple.startTime to signal "not yet started".
+        // The first animation frame that sees this replaces it with the real timestamp,
+        // so the ripple always begins from frame 0 with no skipped progress.
+        const RIPPLE_PENDING_START = -1;
+
         let letterSpanData     = [];
         let canvasContext      = null;
         let activeRipples      = [];
@@ -275,6 +280,12 @@ document.addEventListener('DOMContentLoaded', () => {
         function drawAnimationFrame(currentTimestamp) {
             if (!canvasContext) return;
 
+            // Initialise any pending ripples — stamp their start time on the first frame
+            // they're actually drawn, so rippleProgress always begins at 0 with no skipped frames
+            activeRipples.forEach(ripple => {
+                if (ripple.startTime === RIPPLE_PENDING_START) ripple.startTime = currentTimestamp;
+            });
+
             // Delta-time in ms since last frame — used to advance the decay
             const deltaMs  = lastFrameTimestamp !== null ? currentTimestamp - lastFrameTimestamp : 0;
             lastFrameTimestamp = currentTimestamp;
@@ -372,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Keep the loop alive while there are input sources OR letters haven't fully decayed
-            const hasInputSource   = activeRipples.length > 0 || currentHoverPos !== null;
+            const hasInputSource    = activeRipples.length > 0 || currentHoverPos !== null;
             const shouldKeepLooping = hasInputSource || !isFullyDecayed();
 
             if (shouldKeepLooping) {
@@ -408,18 +419,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
         (document.fonts ? document.fonts.ready : Promise.resolve()).then(buildLetterGrid);
 
+        // Grab the CTA button once for extended proximity detection
+        const ctaButton        = heroSectionElement.querySelector('a.btn, button.btn, .hero-cta, a[href], button') || null;
+        const BUTTON_EXTEND_PX = 10;
+
         heroMouseTracker.addEventListener('mousemove', moveEvent => {
             const heroRect  = heroSectionElement.getBoundingClientRect();
-            currentHoverPos = { x: moveEvent.clientX - heroRect.left, y: moveEvent.clientY - heroRect.top };
+            let pointerX = moveEvent.clientX - heroRect.left;
+            let pointerY = moveEvent.clientY - heroRect.top;
+
+            if (ctaButton) {
+                const buttonRect   = ctaButton.getBoundingClientRect();
+                const buttonLeft   = buttonRect.left   - heroRect.left - BUTTON_EXTEND_PX;
+                const buttonRight  = buttonRect.right  - heroRect.left + BUTTON_EXTEND_PX;
+                const buttonTop    = buttonRect.top    - heroRect.top  - BUTTON_EXTEND_PX;
+                const buttonBottom = buttonRect.bottom - heroRect.top  + BUTTON_EXTEND_PX;
+
+                const isInExtendedButtonZone = pointerX >= buttonLeft  && pointerX <= buttonRight &&
+                                               pointerY >= buttonTop   && pointerY <= buttonBottom;
+
+                // Toggle the enlarged/recoloured state via CSS class
+                ctaButton.classList.toggle('is-proximity-active', isInExtendedButtonZone);
+
+                if (isInExtendedButtonZone) {
+                    // Clamp glow position to the real button edge so letters around it stay lit
+                    pointerX = Math.min(Math.max(pointerX, buttonLeft  + BUTTON_EXTEND_PX), buttonRight  - BUTTON_EXTEND_PX);
+                    pointerY = Math.min(Math.max(pointerY, buttonTop   + BUTTON_EXTEND_PX), buttonBottom - BUTTON_EXTEND_PX);
+                }
+            }
+
+            currentHoverPos = { x: pointerX, y: pointerY };
             startAnimationLoop();
+        });
+        // Remove proximity class when the cursor leaves the hero entirely
+        heroMouseTracker.addEventListener('mouseleave', () => {
+            if (ctaButton) ctaButton.classList.remove('is-proximity-active');
         });
         heroMouseTracker.addEventListener('mouseleave', stopHoverGlow);
         heroMouseTracker.addEventListener('click', clickEvent => {
             const heroRect = heroSectionElement.getBoundingClientRect();
+            // startTime is set to RIPPLE_PENDING_START so the first animation frame
+            // stamps the real timestamp — ripple always begins at progress 0
             activeRipples.push({
                 x:         clickEvent.clientX - heroRect.left,
                 y:         clickEvent.clientY - heroRect.top,
-                startTime: performance.now(),
+                startTime: RIPPLE_PENDING_START,
                 duration:  1400,
                 maxRadius: Math.hypot(heroSectionElement.offsetWidth, heroSectionElement.offsetHeight)
             });
@@ -432,7 +476,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------
-    // 5. SCROLL ANIMATIONS
+    // 5. BUTTON PROXIMITY HOVER + CLICK
+    // ----------------------------------------
+    // When the cursor is within BUTTON_PROXIMITY_PX of a button's border,
+    // apply the same hover styles via a class, and forward clicks to the button.
+    const BUTTON_PROXIMITY_PX = 10;
+
+    // Returns true if the point (mouseX, mouseY) is within `margin` px of the button's border
+    function isWithinButtonProximity(buttonRect, mouseX, mouseY, margin) {
+        const expandedLeft   = buttonRect.left   - margin;
+        const expandedRight  = buttonRect.right  + margin;
+        const expandedTop    = buttonRect.top    - margin;
+        const expandedBottom = buttonRect.bottom + margin;
+        return mouseX >= expandedLeft && mouseX <= expandedRight &&
+               mouseY >= expandedTop  && mouseY <= expandedBottom;
+    }
+
+    // Returns true if the point is actually inside the button (no proximity margin needed)
+    function isInsideButton(buttonRect, mouseX, mouseY) {
+        return mouseX >= buttonRect.left && mouseX <= buttonRect.right &&
+               mouseY >= buttonRect.top  && mouseY <= buttonRect.bottom;
+    }
+
+    document.querySelectorAll('.button').forEach(buttonElement => {
+        document.addEventListener('mousemove', proximityMoveEvent => {
+            const buttonRect = buttonElement.getBoundingClientRect();
+            const mouseX     = proximityMoveEvent.clientX;
+            const mouseY     = proximityMoveEvent.clientY;
+
+            // Only apply proximity class when outside the button but within the margin
+            // (inside the button the native :hover already handles it)
+            if (!isInsideButton(buttonRect, mouseX, mouseY) &&
+                 isWithinButtonProximity(buttonRect, mouseX, mouseY, BUTTON_PROXIMITY_PX)) {
+                buttonElement.classList.add('is-proximity-hovered');
+            } else {
+                buttonElement.classList.remove('is-proximity-hovered');
+            }
+        });
+
+        document.addEventListener('click', proximityClickEvent => {
+            const buttonRect = buttonElement.getBoundingClientRect();
+            const mouseX     = proximityClickEvent.clientX;
+            const mouseY     = proximityClickEvent.clientY;
+
+            // Forward the click to the button if within proximity but not already inside it
+            if (!isInsideButton(buttonRect, mouseX, mouseY) &&
+                 isWithinButtonProximity(buttonRect, mouseX, mouseY, BUTTON_PROXIMITY_PX)) {
+                buttonElement.click();
+            }
+        });
+    });
+
+
+    // ----------------------------------------
+    // 6. SCROLL ANIMATIONS
     // ----------------------------------------
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         const scrollObserver = new IntersectionObserver((visibleEntries, observerInstance) => {

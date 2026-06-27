@@ -7,9 +7,9 @@
     --secondary-color: #9BD31D;
     --dark-text: #292929;
     --light-bg: #FFFCF2;
-    --white: #ffffff;
-    --card-bg: #ffffff;
-    --light-text: #ffffff;
+    --white: #FFFFFF;
+    --card-bg: #fff;
+    --light-text: #FFFCF2;
     --border-color: #ddd;
 
     --font-heading: 'Trajan Supreme', serif;
@@ -203,6 +203,7 @@ section {
     position: relative;
     z-index: 3;
     pointer-events: none;
+    text-shadow: -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2, 1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2, -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2, 1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2;
 }
 
 .hero-text h1 {
