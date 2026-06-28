@@ -24,12 +24,7 @@
 /* ============================================ */
 /* 1. GLOBAL RESET & BASE                       */
 /* ============================================ */
-*, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 body {
@@ -54,12 +49,7 @@ img { max-width: 100%; display: block; }
     border-radius: 4px;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 section { padding: 80px 0; }
 
 .section {
@@ -67,11 +57,7 @@ section { padding: 80px 0; }
     transform: translateY(24px);
     transition: opacity 0.6s ease, transform 0.6s ease;
 }
-
-.section.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
+.section.visible { opacity: 1; transform: translateY(0); }
 
 @media (prefers-reduced-motion: reduce) {
     .section { opacity: 1; transform: none; transition: none; }
@@ -178,7 +164,7 @@ section { padding: 80px 0; }
     white-space: nowrap;
 }
 
-/* Layer 3 — hero text */
+/* Layer 3 — hero text block */
 .hero-text {
     position: relative;
     z-index: 3;
@@ -194,18 +180,34 @@ section { padding: 80px 0; }
 .hero-text h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--secondary-color); margin-bottom: 1.5rem; }
 .hero-text p  { max-width: 700px; margin: 0 auto 30px auto; font-size: 1.2rem; }
 
-/* ---- Hero H1 bounce-in ---- */
-@keyframes heroBounceIn {
-    0%   { opacity: 0; transform: translateY(-60px) scaleY(1.1); }
-    55%  { opacity: 1; transform: translateY(14px) scaleY(0.95); }
-    75%  { transform: translateY(-8px) scaleY(1.02); }
-    90%  { transform: translateY(4px) scaleY(0.99); }
-    100% { opacity: 1; transform: translateY(0) scaleY(1); }
+/* ---- H1 letter-wave animation ---- */
+/* Each letter span inside #heroH1 gets this animation with a staggered delay set by JS */
+@keyframes letterBounceUp {
+    0%   { opacity: 0; transform: translateY(0); }
+    20%  { opacity: 1; transform: translateY(-18px); }
+    45%  { transform: translateY(6px); }
+    65%  { transform: translateY(-6px); }
+    80%  { transform: translateY(2px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
+/* The h1 itself is display:flex so letters sit inline */
 #heroH1 {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+}
+
+/* Each letter span injected by JS */
+#heroH1 .h1-letter {
+    display: inline-block;
     opacity: 0;
-    animation: heroBounceIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+    white-space: pre; /* preserve spaces */
+}
+
+#heroH1 .h1-letter.wave-animate {
+    animation: letterBounceUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ---- Hero P fade + float up ---- */
@@ -243,7 +245,7 @@ section { padding: 80px 0; }
     opacity: 1;
 }
 
-/* Layer 4 — CTA button row */
+/* Layer 4 — CTA row */
 .hero-cta {
     position: relative;
     z-index: 6;
@@ -257,35 +259,34 @@ section { padding: 80px 0; }
 
 .hero-cta .button { pointer-events: all; }
 
-/* ---- Chaos button — default state ---- */
+/* ---- Chaos button — circular, emoji only ---- */
 .button-chaos {
     pointer-events: all;
-    background: var(--accent-color);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
     border: 2px solid var(--accent-color);
-    border-radius: 50px;
-    padding: 10px 22px;
-    font-size: 1rem;
-    font-family: var(--font-body);
-    font-weight: 700;
-    color: var(--dark-text);
+    background: var(--accent-color);
+    font-size: 1.4rem;
+    line-height: 1;
     cursor: pointer;
-    transition: background 0.25s, border-color 0.25s, transform 0.2s,
-                box-shadow 0.25s, color 0.25s,
-                /* positional transitions for chaos-active slide */
-                right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-                bottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-                position 0s;
-    box-shadow: 0 4px 14px rgba(255, 186, 73, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 14px rgba(255, 186, 73, 0.4);
+    /* Positional transition for chaos-active slide to bottom-right */
+    position: relative;
 }
 
 .button-chaos:hover {
     background: #ffca6e;
     border-color: #ffca6e;
-    transform: scale(1.07);
-    box-shadow: 0 6px 22px rgba(255, 186, 73, 0.6);
+    transform: scale(1.12);
+    box-shadow: 0 6px 22px rgba(255, 186, 73, 0.7);
 }
 
-/* Chaos active — button floats to middle-right, turns teal */
+/* In chaos mode: move button to bottom-right, turn teal */
 .hero-section.chaos-active .button-chaos {
     position: absolute;
     right: 32px;
@@ -293,16 +294,14 @@ section { padding: 80px 0; }
     z-index: 8;
     background: var(--primary-color);
     border-color: var(--primary-color);
-    color: var(--light-text);
     box-shadow: 0 4px 18px rgba(29, 211, 176, 0.5);
-    transform: none;
 }
 
 .hero-section.chaos-active .button-chaos:hover {
     background: #25e8c2;
     border-color: #25e8c2;
+    transform: scale(1.12);
     box-shadow: 0 6px 28px rgba(29, 211, 176, 0.7);
-    transform: scale(1.07);
 }
 
 /* ---- Gravity slider panel ---- */
@@ -315,9 +314,7 @@ section { padding: 80px 0; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
 
-    /* hidden by default, shown in chaos mode */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s ease;
@@ -328,39 +325,59 @@ section { padding: 80px 0; }
     pointer-events: all;
 }
 
-.gravity-label {
-    font-size: 1.1rem;
-    line-height: 1;
-    color: var(--dark-text);
-    opacity: 0.6;
-    user-select: none;
+/* Track wrap: holds the slider and the 4 notch labels side by side */
+.gravity-track-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
+    height: 200px;
 }
 
-.gravity-readout {
-    font-family: var(--font-body);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--primary-color);
-    background: rgba(29,211,176,0.1);
-    border: 1px solid rgba(29,211,176,0.3);
-    border-radius: 6px;
-    padding: 3px 6px;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-/* Vertical range input */
+/* The range input — vertical */
 .gravity-slider {
     -webkit-appearance: slider-vertical;
     appearance: slider-vertical;
     writing-mode: vertical-lr;
     direction: rtl;
     width: 28px;
-    height: 160px;
+    height: 200px;
     cursor: pointer;
     accent-color: var(--primary-color);
     background: transparent;
+    flex-shrink: 0;
+}
+
+/* Notch column sits to the right of the slider track */
+.gravity-notch {
+    position: absolute;
+    left: 36px; /* to the right of the 28px slider */
+    display: flex;
+    align-items: center;
+    height: 0; /* positioned by % top via data-index */
+}
+
+/* Space the 4 notches evenly: top (Jupiter) = 0%, bottom (zero) = 100% */
+.gravity-notch[data-index="3"] { top: 0%;         transform: translateY(-50%); }
+.gravity-notch[data-index="2"] { top: 33.33%;     transform: translateY(-50%); }
+.gravity-notch[data-index="1"] { top: 66.67%;     transform: translateY(-50%); }
+.gravity-notch[data-index="0"] { top: 100%;       transform: translateY(-50%); }
+
+.gravity-notch::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 1.5px;
+    background: rgba(41,41,41,0.3);
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.gravity-notch-label {
+    font-size: 1rem;
+    line-height: 1;
+    user-select: none;
 }
 
 /* Layer 5 — mouse tracker */
@@ -371,7 +388,7 @@ section { padding: 80px 0; }
     cursor: default;
 }
 
-/* In chaos mode drop tracker below physics canvas so Matter.js gets mouse events */
+/* In chaos mode drop tracker below physics canvas */
 .hero-section.chaos-active .hero-mouse {
     z-index: 3;
 }
@@ -456,7 +473,6 @@ section { padding: 80px 0; }
     }
 
     .navbar.is-active { display: block; }
-
     .navbar ul { flex-direction: column; gap: 0; }
 
     .navbar li a {
@@ -472,12 +488,10 @@ section { padding: 80px 0; }
     }
 
     .project-grid { grid-template-columns: 1fr; }
-
     .footer-content { flex-direction: column; gap: 16px; text-align: center; }
     .social-links a { margin: 0 10px; }
 
     .gravity-slider-panel { left: 8px; }
-    .gravity-slider { height: 120px; }
 }
 
 @media (max-width: 480px) {
@@ -488,6 +502,6 @@ section { padding: 80px 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #heroH1 { opacity: 1; animation: none; }
-    #heroP  { opacity: 1; animation: none; }
+    #heroH1 .h1-letter { opacity: 1; animation: none; }
+    #heroP              { opacity: 1; animation: none; }
 }

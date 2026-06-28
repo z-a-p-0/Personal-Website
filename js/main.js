@@ -36,21 +36,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const contactFormElement = document.querySelector('.contact-form');
     if (contactFormElement) {
         const feedbackDisplay    = contactFormElement.querySelector('.form-feedback');
-        const isValidEmailFormat = (emailValue) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+        const isValidEmailFormat = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
         contactFormElement.addEventListener('submit', submitEvent => {
             submitEvent.preventDefault();
             const nameInput    = contactFormElement.querySelector('input[name="name"]');
             const emailInput   = contactFormElement.querySelector('input[name="email"]');
             const messageInput = contactFormElement.querySelector('textarea[name="message"]');
-            [nameInput, emailInput, messageInput].forEach(field => field.classList.remove('error'));
+            [nameInput, emailInput, messageInput].forEach(f => f.classList.remove('error'));
             feedbackDisplay.className   = 'form-feedback';
             feedbackDisplay.textContent = '';
 
             let isFormValid = true;
-            if (!nameInput.value.trim())                                                  { nameInput.classList.add('error');    isFormValid = false; }
-            if (!emailInput.value.trim() || !isValidEmailFormat(emailInput.value.trim())) { emailInput.classList.add('error');   isFormValid = false; }
-            if (!messageInput.value.trim())                                               { messageInput.classList.add('error'); isFormValid = false; }
+            if (!nameInput.value.trim())                                                   { nameInput.classList.add('error');    isFormValid = false; }
+            if (!emailInput.value.trim() || !isValidEmailFormat(emailInput.value.trim()))  { emailInput.classList.add('error');   isFormValid = false; }
+            if (!messageInput.value.trim())                                                { messageInput.classList.add('error'); isFormValid = false; }
             if (!isFormValid) {
                 feedbackDisplay.textContent = 'Please fill out all fields correctly.';
                 feedbackDisplay.className   = 'form-feedback error';
@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const submitButton = contactFormElement.querySelector('button[type="submit"]');
-            submitButton.disabled     = true;
-            submitButton.textContent  = 'Sending…';
+            submitButton.disabled    = true;
+            submitButton.textContent = 'Sending…';
             setTimeout(() => {
                 feedbackDisplay.textContent = "Message sent! I'll get back to you shortly.";
                 feedbackDisplay.className   = 'form-feedback success';
@@ -69,8 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 1000);
         });
 
-        contactFormElement.querySelectorAll('input, textarea').forEach(formField =>
-            formField.addEventListener('input', () => formField.classList.remove('error'))
+        contactFormElement.querySelectorAll('input, textarea').forEach(f =>
+            f.addEventListener('input', () => f.classList.remove('error'))
         );
     }
 
@@ -95,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCharIndex    = 0;
     let isDeletingMode      = false;
     let typewriterTimeoutId = null;
-    // When true the typewriter pauses — set during chaos mode
     let typewriterFrozen    = false;
 
     const getRandomDelay = (minMs, maxMs) => Math.random() * (maxMs - minMs) + minMs;
@@ -104,12 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typewriterFrozen || !typewriterElement) return;
 
         const currentPhrase = phraseList[currentPhraseIndex];
-        const currentChar   = currentPhrase.charAt(currentCharIndex);
-
         if (cursorElement) cursorElement.classList.add('typing');
 
         if (!isDeletingMode) {
-            typewriterElement.innerHTML += currentChar;
+            typewriterElement.innerHTML += currentPhrase.charAt(currentCharIndex);
             currentCharIndex++;
 
             if (currentCharIndex === currentPhrase.length) {
@@ -141,8 +138,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (typewriterElement) {
-        setTimeout(animateTypewriter, 800);
+    if (typewriterElement) setTimeout(animateTypewriter, 800);
+
+
+    // ----------------------------------------
+    // 3b. H1 WAVE ANIMATION
+    // Splits "Hello World, I'm ZAP!" into per-letter spans,
+    // then triggers a staggered bounce-up wave on each one.
+    // ----------------------------------------
+    const heroH1El = document.getElementById('heroH1');
+
+    const H1_TEXT                  = "Hello World, I'm ZAP!";
+    const H1_LETTER_DELAY_MS       = 40;   // stagger between each letter
+    const H1_WAVE_START_DELAY_MS   = 200;  // initial delay before wave starts
+
+    function buildH1LetterSpans() {
+        heroH1El.innerHTML = '';
+        H1_TEXT.split('').forEach(char => {
+            const letterSpan = document.createElement('span');
+            letterSpan.classList.add('h1-letter');
+            letterSpan.textContent = char === ' ' ? '\u00A0' : char; // non-breaking space for gaps
+            heroH1El.appendChild(letterSpan);
+        });
+    }
+
+    function triggerH1WaveAnimation() {
+        const letterSpans = heroH1El.querySelectorAll('.h1-letter');
+        letterSpans.forEach((span, index) => {
+            // Reset state for re-plays (after chaos restore)
+            span.classList.remove('wave-animate');
+            span.style.opacity   = '0';
+            span.style.animation = 'none';
+            // Force reflow so removing the class is registered
+            void span.offsetWidth;
+            span.style.animation = '';
+
+            const delayMs = H1_WAVE_START_DELAY_MS + index * H1_LETTER_DELAY_MS;
+            setTimeout(() => {
+                span.classList.add('wave-animate');
+                span.style.animationDelay = '0ms'; // delay handled by setTimeout
+            }, delayMs);
+        });
+    }
+
+    if (heroH1El && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        buildH1LetterSpans();
+        triggerH1WaveAnimation();
+    } else if (heroH1El) {
+        // Reduced motion: just show the text immediately
+        heroH1El.textContent = H1_TEXT;
     }
 
 
@@ -167,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let letterSpanData     = [];
         let canvasContext      = null;
         let activeRipples      = [];
-        let animationFrameId   = null;
+        let zapGlowAnimFrameId = null; // RENAMED — distinct from physics anim frame ID
         let currentHoverPos    = null;
         let lastFrameTimestamp = null;
 
@@ -188,11 +232,11 @@ document.addEventListener('DOMContentLoaded', () => {
         function measureLetterDimensions(textToMeasure) {
             const el = document.createElement('span');
             el.textContent = textToMeasure;
-            el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;white-space:nowrap;';
-            el.style.fontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-heading').trim() || "'Trajan Supreme',serif";
-            el.style.fontSize   = 'clamp(5rem, 11vw, 9rem)';
-            el.style.fontWeight = '700';
-            el.style.lineHeight = '1';
+            el.style.cssText     = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;white-space:nowrap;';
+            el.style.fontFamily  = getComputedStyle(document.documentElement).getPropertyValue('--font-heading').trim() || "'Trajan Supreme',serif";
+            el.style.fontSize    = 'clamp(5rem, 11vw, 9rem)';
+            el.style.fontWeight  = '700';
+            el.style.lineHeight  = '1';
             document.body.appendChild(el);
             const dims = { w: el.offsetWidth, h: el.offsetHeight };
             document.body.removeChild(el);
@@ -261,28 +305,28 @@ document.addEventListener('DOMContentLoaded', () => {
             letterElement.style.setProperty('-webkit-text-stroke-color', '#29292925');
         }
 
-        function drawAnimationFrame(currentTimestamp) {
+        function drawGlowFrame(currentTimestamp) {
             if (!canvasContext) return;
 
             activeRipples.forEach(ripple => {
                 if (ripple.startTime === RIPPLE_PENDING_START) ripple.startTime = currentTimestamp;
             });
 
-            const deltaMs  = lastFrameTimestamp !== null ? currentTimestamp - lastFrameTimestamp : 0;
-            lastFrameTimestamp = currentTimestamp;
-            const decayStep = GLOW_DECAY_RATE_PER_MS * deltaMs;
+            const deltaMs       = lastFrameTimestamp !== null ? currentTimestamp - lastFrameTimestamp : 0;
+            lastFrameTimestamp  = currentTimestamp;
+            const decayStep     = GLOW_DECAY_RATE_PER_MS * deltaMs;
+            const canvasWidth   = glowCanvasElement.width;
+            const canvasHeight  = glowCanvasElement.height;
 
-            const canvasWidth  = glowCanvasElement.width;
-            const canvasHeight = glowCanvasElement.height;
             canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
-            activeRipples = activeRipples.filter(ripple => currentTimestamp - ripple.startTime < ripple.duration);
+            activeRipples = activeRipples.filter(r => currentTimestamp - r.startTime < r.duration);
 
             if (currentHoverPos) {
-                const hoverGradient = canvasContext.createRadialGradient(currentHoverPos.x, currentHoverPos.y, 0, currentHoverPos.x, currentHoverPos.y, HOVER_GLOW_RADIUS);
-                hoverGradient.addColorStop(0,   'rgba(29,211,176,0.3)');
-                hoverGradient.addColorStop(0.3, 'rgba(29,211,176,0.07)');
-                hoverGradient.addColorStop(1,   'rgba(29,211,176,0.0)');
-                canvasContext.fillStyle = hoverGradient;
+                const hg = canvasContext.createRadialGradient(currentHoverPos.x, currentHoverPos.y, 0, currentHoverPos.x, currentHoverPos.y, HOVER_GLOW_RADIUS);
+                hg.addColorStop(0,   'rgba(29,211,176,0.3)');
+                hg.addColorStop(0.3, 'rgba(29,211,176,0.07)');
+                hg.addColorStop(1,   'rgba(29,211,176,0.0)');
+                canvasContext.fillStyle = hg;
                 canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
             }
 
@@ -290,93 +334,95 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rippleProgress   = (currentTimestamp - ripple.startTime) / ripple.duration;
                 const easeOutQuad      = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
                 const oscillationAlpha = Math.sin(rippleProgress * Math.PI);
-                const rippleGradient   = canvasContext.createRadialGradient(ripple.x, ripple.y, 0, ripple.x, ripple.y, easeOutQuad * ripple.maxRadius);
-                rippleGradient.addColorStop(0,   `rgba(29,211,176,${(oscillationAlpha*0.22).toFixed(3)})`);
-                rippleGradient.addColorStop(0.6, `rgba(29,211,176,${(oscillationAlpha*0.09).toFixed(3)})`);
-                rippleGradient.addColorStop(1,   'rgba(29,211,176,0)');
-                canvasContext.fillStyle = rippleGradient;
+                const rg               = canvasContext.createRadialGradient(ripple.x, ripple.y, 0, ripple.x, ripple.y, easeOutQuad * ripple.maxRadius);
+                rg.addColorStop(0,   `rgba(29,211,176,${(oscillationAlpha*0.22).toFixed(3)})`);
+                rg.addColorStop(0.6, `rgba(29,211,176,${(oscillationAlpha*0.09).toFixed(3)})`);
+                rg.addColorStop(1,   'rgba(29,211,176,0)');
+                canvasContext.fillStyle = rg;
                 canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
             });
 
-            letterSpanData.forEach(({ el: letterEl, cx: letterCenterX, cy: letterCenterY }, letterIdx) => {
+            letterSpanData.forEach(({ el, cx, cy }, idx) => {
                 let targetFill   = 0;
                 let targetStroke = 0;
 
                 if (currentHoverPos) {
-                    const dist = Math.hypot(letterCenterX - currentHoverPos.x, letterCenterY - currentHoverPos.y);
+                    const dist = Math.hypot(cx - currentHoverPos.x, cy - currentHoverPos.y);
                     if (dist < HOVER_GLOW_RADIUS) {
-                        const proximityRatio = 1 - dist / HOVER_GLOW_RADIUS;
-                        targetFill   = Math.max(targetFill,   proximityRatio * proximityRatio);
-                        targetStroke = Math.max(targetStroke, proximityRatio * 1.5);
+                        const ratio  = 1 - dist / HOVER_GLOW_RADIUS;
+                        targetFill   = Math.max(targetFill,   ratio * ratio);
+                        targetStroke = Math.max(targetStroke, ratio * 1.5);
                     }
                 }
 
                 activeRipples.forEach(ripple => {
-                    const rippleProgress = (currentTimestamp - ripple.startTime) / ripple.duration;
-                    const easeOutQuad    = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
-                    const rippleEdge     = easeOutQuad * ripple.maxRadius - Math.hypot(letterCenterX - ripple.x, letterCenterY - ripple.y);
-                    const rippleWidth    = ripple.maxRadius * 0.3;
-                    if (rippleEdge > 0 && rippleEdge < rippleWidth) {
-                        const waveIntensity = (1 - rippleEdge / rippleWidth) * Math.sin(rippleProgress * Math.PI);
-                        targetFill   = Math.max(targetFill,   waveIntensity);
-                        targetStroke = Math.max(targetStroke, waveIntensity);
+                    const rp       = (currentTimestamp - ripple.startTime) / ripple.duration;
+                    const eOQ      = rp < 0.5 ? 2*rp*rp : 1 - Math.pow(-2*rp+2,2)/2;
+                    const edge     = eOQ * ripple.maxRadius - Math.hypot(cx - ripple.x, cy - ripple.y);
+                    const rWidth   = ripple.maxRadius * 0.3;
+                    if (edge > 0 && edge < rWidth) {
+                        const intensity  = (1 - edge / rWidth) * Math.sin(rp * Math.PI);
+                        targetFill   = Math.max(targetFill,   intensity);
+                        targetStroke = Math.max(targetStroke, intensity);
                     }
                 });
 
-                let currentFill   = letterDecayFill[letterIdx];
-                let currentStroke = letterDecayStroke[letterIdx];
+                let fill   = letterDecayFill[idx];
+                let stroke = letterDecayStroke[idx];
 
-                currentFill   = targetFill   > currentFill   ? targetFill   : Math.max(targetFill,   currentFill   - decayStep);
-                currentStroke = targetStroke > currentStroke ? targetStroke : Math.max(targetStroke, currentStroke - decayStep);
+                fill   = targetFill   > fill   ? targetFill   : Math.max(targetFill,   fill   - decayStep);
+                stroke = targetStroke > stroke ? targetStroke : Math.max(targetStroke, stroke - decayStep);
+                fill   = fill   <= DECAY_EPSILON ? 0 : fill;
+                stroke = stroke <= DECAY_EPSILON ? 0 : stroke;
 
-                currentFill   = currentFill   <= DECAY_EPSILON ? 0 : currentFill;
-                currentStroke = currentStroke <= DECAY_EPSILON ? 0 : currentStroke;
+                letterDecayFill[idx]   = fill;
+                letterDecayStroke[idx] = stroke;
 
-                letterDecayFill[letterIdx]   = currentFill;
-                letterDecayStroke[letterIdx] = currentStroke;
-
-                if (currentFill > 0 || currentStroke > 0) {
-                    letterEl.style.color = `rgba(29,211,176,${currentFill.toFixed(3)})`;
-                    letterEl.style.setProperty('-webkit-text-stroke-color', `rgba(29,211,176,${(0.22 + currentStroke).toFixed(3)})`);
+                if (fill > 0 || stroke > 0) {
+                    el.style.color = `rgba(29,211,176,${fill.toFixed(3)})`;
+                    el.style.setProperty('-webkit-text-stroke-color', `rgba(29,211,176,${(0.22 + stroke).toFixed(3)})`);
                 } else {
-                    resetLetterToDefault(letterEl);
+                    resetLetterToDefault(el);
                 }
             });
 
-            const hasInputSource    = activeRipples.length > 0 || currentHoverPos !== null;
-            const shouldKeepLooping = hasInputSource || !isFullyDecayed();
+            const hasInput      = activeRipples.length > 0 || currentHoverPos !== null;
+            const keepLooping   = hasInput || !isFullyDecayed();
 
-            if (shouldKeepLooping) {
-                animationFrameId = requestAnimationFrame(drawAnimationFrame);
+            if (keepLooping) {
+                zapGlowAnimFrameId = requestAnimationFrame(drawGlowFrame);
             } else {
-                animationFrameId   = null;
+                zapGlowAnimFrameId = null;
                 lastFrameTimestamp = null;
                 canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
                 letterSpanData.forEach(({ el }) => resetLetterToDefault(el));
             }
         }
 
-        function startAnimationLoop() {
-            if (!animationFrameId) {
+        function startGlowLoop() {
+            if (!zapGlowAnimFrameId) {
                 lastFrameTimestamp = null;
-                animationFrameId   = requestAnimationFrame(drawAnimationFrame);
+                zapGlowAnimFrameId = requestAnimationFrame(drawGlowFrame);
             }
         }
 
         function stopHoverGlow() {
             currentHoverPos = null;
             if (isFullyDecayed()) {
-                if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+                if (zapGlowAnimFrameId) { cancelAnimationFrame(zapGlowAnimFrameId); zapGlowAnimFrameId = null; }
                 lastFrameTimestamp = null;
                 canvasContext && canvasContext.clearRect(0, 0, glowCanvasElement.width, glowCanvasElement.height);
                 letterSpanData.forEach(({ el }) => resetLetterToDefault(el));
-                return;
             }
+            // else: let the loop keep running so it decays naturally to epsilon
         }
 
         (document.fonts ? document.fonts.ready : Promise.resolve()).then(buildLetterGrid);
 
-        const ctaButton        = heroSectionElement.querySelector('a.btn, button.btn, .hero-cta, a[href], button') || null;
+        // Expose the live arrays so chaos mode can read them
+        window._zapGridGetState = () => ({ letterSpanData, letterDecayFill, letterDecayStroke });
+
+        const ctaButton        = heroSectionElement.querySelector('#viewWorkBtn') || null;
         const BUTTON_EXTEND_PX = 10;
 
         heroMouseTracker.addEventListener('mousemove', moveEvent => {
@@ -385,31 +431,29 @@ document.addEventListener('DOMContentLoaded', () => {
             let pointerY   = moveEvent.clientY - heroRect.top;
 
             if (ctaButton) {
-                const buttonRect   = ctaButton.getBoundingClientRect();
-                const buttonLeft   = buttonRect.left   - heroRect.left - BUTTON_EXTEND_PX;
-                const buttonRight  = buttonRect.right  - heroRect.left + BUTTON_EXTEND_PX;
-                const buttonTop    = buttonRect.top    - heroRect.top  - BUTTON_EXTEND_PX;
-                const buttonBottom = buttonRect.bottom - heroRect.top  + BUTTON_EXTEND_PX;
-
-                const isInExtendedButtonZone = pointerX >= buttonLeft && pointerX <= buttonRight &&
-                                               pointerY >= buttonTop  && pointerY <= buttonBottom;
-
-                ctaButton.classList.toggle('is-proximity-active', isInExtendedButtonZone);
-
-                if (isInExtendedButtonZone) {
+                const br           = ctaButton.getBoundingClientRect();
+                const buttonLeft   = br.left   - heroRect.left - BUTTON_EXTEND_PX;
+                const buttonRight  = br.right  - heroRect.left + BUTTON_EXTEND_PX;
+                const buttonTop    = br.top    - heroRect.top  - BUTTON_EXTEND_PX;
+                const buttonBottom = br.bottom - heroRect.top  + BUTTON_EXTEND_PX;
+                const inZone       = pointerX >= buttonLeft && pointerX <= buttonRight &&
+                                     pointerY >= buttonTop  && pointerY <= buttonBottom;
+                ctaButton.classList.toggle('is-proximity-active', inZone);
+                if (inZone) {
                     pointerX = Math.min(Math.max(pointerX, buttonLeft  + BUTTON_EXTEND_PX), buttonRight  - BUTTON_EXTEND_PX);
                     pointerY = Math.min(Math.max(pointerY, buttonTop   + BUTTON_EXTEND_PX), buttonBottom - BUTTON_EXTEND_PX);
                 }
             }
 
             currentHoverPos = { x: pointerX, y: pointerY };
-            startAnimationLoop();
+            startGlowLoop();
         });
 
         heroMouseTracker.addEventListener('mouseleave', () => {
             if (ctaButton) ctaButton.classList.remove('is-proximity-active');
+            stopHoverGlow();
         });
-        heroMouseTracker.addEventListener('mouseleave', stopHoverGlow);
+
         heroMouseTracker.addEventListener('click', clickEvent => {
             const heroRect = heroSectionElement.getBoundingClientRect();
             activeRipples.push({
@@ -419,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 duration:  1400,
                 maxRadius: Math.hypot(heroSectionElement.offsetWidth, heroSectionElement.offsetHeight)
             });
-            startAnimationLoop();
+            startGlowLoop();
         });
 
         let resizeTimeoutId;
@@ -427,14 +471,6 @@ document.addEventListener('DOMContentLoaded', () => {
             clearTimeout(resizeTimeoutId);
             resizeTimeoutId = setTimeout(buildLetterGrid, 150);
         });
-
-        // Expose state needed by chaos mode
-        window._zapGrid = { letterSpanData, letterDecayFill, letterDecayStroke };
-        // Re-export after each build since the arrays are replaced
-        const originalBuildLetterGrid = buildLetterGrid;
-        // We patch buildLetterGrid to re-export after rebuild.
-        // (We do this by replacing the function reference in the outer scope via a flag.)
-        window._zapGridGetState = () => ({ letterSpanData, letterDecayFill, letterDecayStroke });
     }
 
 
@@ -456,30 +492,27 @@ document.addEventListener('DOMContentLoaded', () => {
         rippleBlobEl.style.height = '0';
         buttonEl.appendChild(rippleBlobEl);
 
-        function getCursorPositionRelativeToButton(mouseEvent) {
-            const buttonRect = buttonEl.getBoundingClientRect();
-            return { x: mouseEvent.clientX - buttonRect.left, y: mouseEvent.clientY - buttonRect.top };
-        }
+        const getRelativeCursorPos = e => {
+            const r = buttonEl.getBoundingClientRect();
+            return { x: e.clientX - r.left, y: e.clientY - r.top };
+        };
 
-        function expandBlobFromPosition(mouseEvent) {
-            const cursorPos = getCursorPositionRelativeToButton(mouseEvent);
-            rippleBlobEl.style.top    = cursorPos.y + 'px';
-            rippleBlobEl.style.left   = cursorPos.x + 'px';
-            const fullSize = getButtonBlobFullSize(buttonEl);
-            rippleBlobEl.style.width  = fullSize;
-            rippleBlobEl.style.height = fullSize;
-        }
+        buttonEl.addEventListener('mouseenter', e => {
+            const p = getRelativeCursorPos(e);
+            rippleBlobEl.style.top    = p.y + 'px';
+            rippleBlobEl.style.left   = p.x + 'px';
+            const sz = getButtonBlobFullSize(buttonEl);
+            rippleBlobEl.style.width  = sz;
+            rippleBlobEl.style.height = sz;
+        });
 
-        function contractBlobToPosition(mouseEvent) {
-            const cursorPos = getCursorPositionRelativeToButton(mouseEvent);
-            rippleBlobEl.style.top    = cursorPos.y + 'px';
-            rippleBlobEl.style.left   = cursorPos.x + 'px';
+        buttonEl.addEventListener('mouseleave', e => {
+            const p = getRelativeCursorPos(e);
+            rippleBlobEl.style.top    = p.y + 'px';
+            rippleBlobEl.style.left   = p.x + 'px';
             rippleBlobEl.style.width  = '0';
             rippleBlobEl.style.height = '0';
-        }
-
-        buttonEl.addEventListener('mouseenter', expandBlobFromPosition);
-        buttonEl.addEventListener('mouseleave', contractBlobToPosition);
+        });
     });
 
 
@@ -487,14 +520,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. SCROLL ANIMATIONS
     // ----------------------------------------
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        const scrollObserver = new IntersectionObserver((visibleEntries, observerInstance) => {
-            visibleEntries.forEach(entry => {
-                if (entry.isIntersecting) { entry.target.classList.add('visible'); observerInstance.unobserve(entry.target); }
+        const scrollObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
             });
         }, { threshold: 0.15 });
-        document.querySelectorAll('.section').forEach(sectionElement => scrollObserver.observe(sectionElement));
+        document.querySelectorAll('.section').forEach(el => scrollObserver.observe(el));
     } else {
-        document.querySelectorAll('.section').forEach(sectionElement => sectionElement.classList.add('visible'));
+        document.querySelectorAll('.section').forEach(el => el.classList.add('visible'));
     }
 
 
@@ -503,108 +536,93 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------
     const chaosToggleButton = document.getElementById('chaosToggleBtn');
     const physicsCanvas     = document.getElementById('physicsCanvas');
-    const heroH1El          = document.getElementById('heroH1');
     const heroPEl           = document.getElementById('heroP');
     const viewWorkBtnEl     = document.getElementById('viewWorkBtn');
     const typewriterEl      = document.getElementById('typewriter');
     const heroSectionEl     = document.querySelector('.hero-section');
     const gravitySliderEl   = document.getElementById('gravitySlider');
-    const gravityReadoutEl  = document.getElementById('gravityReadout');
-    const gravityPanelEl    = document.getElementById('gravitySliderPanel');
 
     if (!chaosToggleButton || !physicsCanvas || !window.Matter) return;
 
     const { Engine, Runner, Bodies, Body, Composite, Mouse, MouseConstraint, World } = Matter;
 
-    // Gravity presets (Matter.js gravity where 1.0 ≈ ~9.8 m/s² scaled)
-    // Slider value 0 → 3 maps to: 0=none, 1=moon, 2=earth, 3=jupiter
+    // Gravity: slider 0–3 maps to these presets
     const GRAVITY_PRESETS = [
-        { label: 'Zero',    value: 0 },
-        { label: 'Moon',    value: 0.27 },
-        { label: 'Earth',   value: 1.5 },
-        { label: 'Jupiter', value: 3.7 }
+        { value: 0    }, // 0 = zero gravity
+        { value: 0.27 }, // 1 = moon
+        { value: 1.5  }, // 2 = earth (default)
+        { value: 3.7  }  // 3 = jupiter
     ];
 
-    // Speed below which we damp a body to zero (avoids infinite micro-bouncing).
-    // Disabled at zero gravity so letters drift freely.
-    const SLEEP_SPEED_THRESHOLD      = 0.4;
-    const SLEEP_ANGULAR_THRESHOLD    = 0.015;
-    const SLEEP_CONSECUTIVE_FRAMES   = 8; // frames below threshold before zeroing
+    // Micro-sleep damping thresholds
+    const SLEEP_SPEED_THRESHOLD    = 0.4;
+    const SLEEP_ANGULAR_THRESHOLD  = 0.015;
+    const SLEEP_CONSECUTIVE_FRAMES = 8;
 
-    let chaosActive      = false;
-    let physicsEngine    = null;
-    let physicsRunner    = null;
-    let physicsMouseCon  = null;
-    let physicsAnimId    = null;
-    let physicsLetters   = []; // { body, char, fontSize, color, fontFamily, fontStyle, fontWeight, sleepFrames }
-    let physicsZapLetters = []; // teal background ZAPs that join the physics world
-    let physicsCtx       = null;
-    let wallBodies       = [];
-    let currentGravityY  = 1.5; // tracks live gravity value
+    // 20% chance any given background ZAP letter will drop in chaos mode
+    const ZAP_DROP_CHANCE = 0.2;
+
+    let chaosActive       = false;
+    let physicsEngine     = null;
+    let physicsRunner     = null;
+    let physicsMouseCon   = null;
+    let physicsAnimFrameId = null; // separate from zapGlowAnimFrameId above
+    let physicsLetters    = [];    // { body, char, fontSize, color, fontFamily, fontStyle, fontWeight, sleepFrames }
+    let physicsZapLetters = [];    // { body, char, fontSize, fontFamily, fillColor, strokeColor, domSpan, sleepFrames }
+    let physicsCtx        = null;
+    let wallBodies        = [];
+    let currentGravityY   = 1.5;
 
 
     // ---- Gravity slider ----
 
-    function getGravityFromSliderValue(sliderVal) {
-        // slider 0..3, map linearly between presets
-        const lower  = Math.floor(sliderVal);
-        const upper  = Math.min(Math.ceil(sliderVal), GRAVITY_PRESETS.length - 1);
-        const frac   = sliderVal - lower;
-        const gLower = GRAVITY_PRESETS[lower].value;
-        const gUpper = GRAVITY_PRESETS[upper].value;
-        return gLower + (gUpper - gLower) * frac;
+    function getGravityFromSliderValue(val) {
+        const lower  = Math.min(Math.floor(val), GRAVITY_PRESETS.length - 2);
+        const upper  = lower + 1;
+        const frac   = val - lower;
+        return GRAVITY_PRESETS[lower].value + (GRAVITY_PRESETS[upper].value - GRAVITY_PRESETS[lower].value) * frac;
     }
 
-    function getGravityLabel(sliderVal) {
-        // Find nearest preset for readout label
-        const snapped = Math.round(sliderVal);
-        return GRAVITY_PRESETS[Math.min(snapped, GRAVITY_PRESETS.length - 1)].label;
-    }
-
-    if (gravitySliderEl && gravityReadoutEl) {
+    if (gravitySliderEl) {
         gravitySliderEl.addEventListener('input', () => {
-            const sliderVal  = parseFloat(gravitySliderEl.value);
-            currentGravityY  = getGravityFromSliderValue(sliderVal);
-            gravityReadoutEl.textContent = getGravityLabel(sliderVal);
-
-            if (physicsEngine) {
-                physicsEngine.gravity.y = currentGravityY;
-            }
+            currentGravityY = getGravityFromSliderValue(parseFloat(gravitySliderEl.value));
+            if (physicsEngine) physicsEngine.gravity.y = currentGravityY;
         });
     }
 
 
     // ---- Character harvesting ----
+    // Measures each character's on-screen position using temporary per-character spans,
+    // then restores the element's original HTML.
 
     function harvestCharactersFromElement(domEl, heroRect) {
         const harvested = [];
         if (!domEl) return harvested;
 
-        const computedStyle = getComputedStyle(domEl);
-        const fontSize      = parseFloat(computedStyle.fontSize);
-        const fontFamily    = computedStyle.fontFamily;
-        const fontStyle     = computedStyle.fontStyle;
-        const fontWeight    = computedStyle.fontWeight;
-        const color         = computedStyle.color;
+        const cs         = getComputedStyle(domEl);
+        const fontSize   = parseFloat(cs.fontSize);
+        const fontFamily = cs.fontFamily;
+        const fontStyle  = cs.fontStyle;
+        const fontWeight = cs.fontWeight;
+        const color      = cs.color;
 
-        const originalHTML = domEl.innerHTML;
-        const textContent  = domEl.textContent;
+        const originalHTML  = domEl.innerHTML;
+        const textContent   = domEl.textContent;
 
         domEl.innerHTML = textContent.split('').map(ch =>
             ch === ' ' ? `<span style="white-space:pre"> </span>` : `<span>${ch}</span>`
         ).join('');
 
-        domEl.querySelectorAll('span').forEach((charSpan, charIndex) => {
-            const spanRect = charSpan.getBoundingClientRect();
-            const centerX  = spanRect.left - heroRect.left + spanRect.width  / 2;
-            const centerY  = spanRect.top  - heroRect.top  + spanRect.height / 2;
-            const char     = textContent[charIndex];
-
-            if (char && char !== ' ' && spanRect.width > 0) {
+        domEl.querySelectorAll('span').forEach((charSpan, i) => {
+            const sr    = charSpan.getBoundingClientRect();
+            const char  = textContent[i];
+            if (char && char !== ' ' && sr.width > 0) {
                 harvested.push({
-                    char, centerX, centerY,
-                    width:      Math.max(spanRect.width,  4),
-                    height:     Math.max(spanRect.height, 4),
+                    char,
+                    centerX:    sr.left - heroRect.left + sr.width  / 2,
+                    centerY:    sr.top  - heroRect.top  + sr.height / 2,
+                    width:      Math.max(sr.width,  4),
+                    height:     Math.max(sr.height, 4),
                     fontSize, fontFamily, fontStyle, fontWeight, color
                 });
             }
@@ -614,49 +632,75 @@ document.addEventListener('DOMContentLoaded', () => {
         return harvested;
     }
 
+    // Specialised harvest for the h1 letter-spans (they are already split into spans by
+    // the wave animation builder, so we read those directly instead of re-splitting)
+    function harvestH1Characters(h1El, heroRect) {
+        const harvested = [];
+        if (!h1El) return harvested;
+        const cs         = getComputedStyle(h1El);
+        const fontSize   = parseFloat(cs.fontSize);
+        const fontFamily = cs.fontFamily;
+        const fontStyle  = cs.fontStyle;
+        const fontWeight = cs.fontWeight;
+        const color      = cs.color;
+
+        h1El.querySelectorAll('.h1-letter').forEach(span => {
+            const sr   = span.getBoundingClientRect();
+            const char = span.textContent.replace('\u00A0', ' ');
+            if (char !== ' ' && sr.width > 0) {
+                harvested.push({
+                    char,
+                    centerX:    sr.left - heroRect.left + sr.width  / 2,
+                    centerY:    sr.top  - heroRect.top  + sr.height / 2,
+                    width:      Math.max(sr.width,  4),
+                    height:     Math.max(sr.height, 4),
+                    fontSize, fontFamily, fontStyle, fontWeight, color
+                });
+            }
+        });
+        return harvested;
+    }
+
 
     // ---- Wall building ----
 
-    function buildWalls(sectionWidth, sectionHeight) {
-        const t = 60; // wall thickness
+    function buildWalls(w, h) {
+        const t = 60;
         return [
-            Bodies.rectangle(sectionWidth / 2, sectionHeight + t / 2, sectionWidth * 3, t,             { isStatic: true, label: 'wall-floor' }),
-            Bodies.rectangle(-t / 2,           sectionHeight / 2,     t,                sectionHeight * 3, { isStatic: true, label: 'wall-left'  }),
-            Bodies.rectangle(sectionWidth + t / 2, sectionHeight / 2, t,                sectionHeight * 3, { isStatic: true, label: 'wall-right' })
+            Bodies.rectangle(w / 2,     h + t / 2, w * 3, t,     { isStatic: true }),
+            Bodies.rectangle(-t / 2,    h / 2,     t,     h * 3, { isStatic: true }),
+            Bodies.rectangle(w + t / 2, h / 2,     t,     h * 3, { isStatic: true })
         ];
     }
 
 
     // ---- Physics body factory ----
 
-    function makeLetterBody(centerX, centerY, width, height) {
-        return Bodies.rectangle(centerX, centerY, width * 0.85, height * 0.85, {
+    function makeLetterBody(cx, cy, w, h) {
+        return Bodies.rectangle(cx, cy, w * 0.85, h * 0.85, {
             restitution: 0.45,
             friction:    0.3,
-            density:     0.002,
-            label:       'letter'
+            density:     0.002
         });
     }
 
 
-    // ---- Micro-sleep damping (stops infinite micro-bouncing) ----
+    // ---- Micro-sleep damping ----
 
-    function applyMicroSleepDamping(letterPhysicsObj) {
-        // Don't damp in zero gravity — let things float freely
-        if (currentGravityY < 0.05) return;
+    function applyMicroSleepDamping(letterObj) {
+        if (currentGravityY < 0.05) return; // allow free float in zero gravity
+        const speed   = Math.hypot(letterObj.body.velocity.x, letterObj.body.velocity.y);
+        const angular = Math.abs(letterObj.body.angularVelocity);
 
-        const speed        = Math.hypot(letterPhysicsObj.body.velocity.x, letterPhysicsObj.body.velocity.y);
-        const angularSpeed = Math.abs(letterPhysicsObj.body.angularVelocity);
-
-        if (speed < SLEEP_SPEED_THRESHOLD && angularSpeed < SLEEP_ANGULAR_THRESHOLD) {
-            letterPhysicsObj.sleepFrames = (letterPhysicsObj.sleepFrames || 0) + 1;
+        if (speed < SLEEP_SPEED_THRESHOLD && angular < SLEEP_ANGULAR_THRESHOLD) {
+            letterObj.sleepFrames = (letterObj.sleepFrames || 0) + 1;
         } else {
-            letterPhysicsObj.sleepFrames = 0;
+            letterObj.sleepFrames = 0;
         }
 
-        if (letterPhysicsObj.sleepFrames >= SLEEP_CONSECUTIVE_FRAMES) {
-            Body.setVelocity(letterPhysicsObj.body, { x: 0, y: 0 });
-            Body.setAngularVelocity(letterPhysicsObj.body, 0);
+        if (letterObj.sleepFrames >= SLEEP_CONSECUTIVE_FRAMES) {
+            Body.setVelocity(letterObj.body, { x: 0, y: 0 });
+            Body.setAngularVelocity(letterObj.body, 0);
         }
     }
 
@@ -667,19 +711,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chaosActive) return;
         chaosActive = true;
 
-        // Freeze typewriter
         typewriterFrozen = true;
         clearTimeout(typewriterTimeoutId);
 
         heroSectionEl.classList.add('chaos-active');
+        chaosToggleButton.textContent = '✕';
 
-        // Update button label/emoji
-        chaosToggleButton.textContent = 'X';
-
-        // Reset gravity slider to Earth default
-        if (gravitySliderEl) gravitySliderEl.value = '2';
-        if (gravityReadoutEl) gravityReadoutEl.textContent = 'Earth';
+        // Reset gravity to Earth default
         currentGravityY = 1.5;
+        if (gravitySliderEl) gravitySliderEl.value = '2';
 
         const sectionWidth  = heroSectionEl.offsetWidth;
         const sectionHeight = heroSectionEl.offsetHeight;
@@ -692,27 +732,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const heroRect = heroSectionEl.getBoundingClientRect();
 
-        // Harvest DOM text characters
-        const h1Characters  = harvestCharactersFromElement(heroH1El, heroRect);
-        const h2Element     = document.querySelector('#heroText h2');
-        const h2Characters  = harvestCharactersFromElement(h2Element, heroRect);
+        // Harvest h1 via its pre-built letter spans
+        const h1Characters = harvestH1Characters(heroH1El, heroRect);
+
+        // Harvest h2 (typewriter line)
+        const h2El          = document.querySelector('#heroText h2');
+        const h2Characters  = harvestCharactersFromElement(h2El, heroRect);
+
+        // Harvest paragraph — we need its actual rendered content rect so chaos letters
+        // respect the same max-width:700px centred constraint.
+        // We measure individual chars which gives us exact positions automatically.
         const pCharacters   = harvestCharactersFromElement(heroPEl, heroRect);
 
-        const btnTextEl     = viewWorkBtnEl ? (viewWorkBtnEl.querySelector('span') || viewWorkBtnEl) : null;
-        const btnCharacters = btnTextEl ? harvestCharactersFromElement(btnTextEl, heroRect) : [];
+        // Harvest "View My Work" button text
+        const btnSpanEl     = viewWorkBtnEl ? (viewWorkBtnEl.querySelector('span') || viewWorkBtnEl) : null;
+        const btnCharacters = btnSpanEl ? harvestCharactersFromElement(btnSpanEl, heroRect) : [];
         if (viewWorkBtnEl) {
             const btnColor = getComputedStyle(viewWorkBtnEl).color;
             btnCharacters.forEach(ch => { ch.color = btnColor; });
         }
 
-        const allTextCharacterData = [...h1Characters, ...h2Characters, ...pCharacters, ...btnCharacters];
+        const allTextCharData = [...h1Characters, ...h2Characters, ...pCharacters, ...btnCharacters];
 
-        // Build walls
+        // Walls
         wallBodies = buildWalls(sectionWidth, sectionHeight);
         Composite.add(physicsEngine.world, wallBodies);
 
-        // Create physics bodies for text characters
-        physicsLetters = allTextCharacterData.map(charData => {
+        // Physics bodies for text characters
+        physicsLetters = allTextCharData.map(charData => {
             const body = makeLetterBody(charData.centerX, charData.centerY, charData.width, charData.height);
             Body.setVelocity(body, { x: (Math.random() - 0.5) * 14, y: -(Math.random() * 8 + 3) });
             Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.3);
@@ -729,59 +776,51 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         });
 
-        // ---- Harvest teal ZAP background letters ----
-        // Only include letters that currently have a non-zero fill alpha (visibly teal)
+        // ---- Background ZAP letters: 5% random chance each one drops ----
         physicsZapLetters = [];
 
         if (window._zapGridGetState) {
-            const { letterSpanData, letterDecayFill, letterDecayStroke } = window._zapGridGetState();
+            const { letterSpanData } = window._zapGridGetState();
 
-            letterSpanData.forEach((spanData, idx) => {
-                const fillAlpha   = letterDecayFill[idx];
-                const strokeAlpha = letterDecayStroke[idx];
+            letterSpanData.forEach(spanData => {
+                // ~5% chance this ZAP letter joins the physics world
+                if (Math.random() > ZAP_DROP_CHANCE) return;
 
-                // Only include letters that are meaningfully teal right now
-                if (fillAlpha < 0.05 && strokeAlpha < 0.05) return;
+                // Assign a random teal shade (transparency varies: 0.3 to 1.0 fill)
+                const randomFillAlpha   = 0.3 + Math.random() * 0.7;
+                const randomStrokeAlpha = 0.22 + Math.random() * 0.5;
+                const frozenFillColor   = `rgba(29,211,176,${randomFillAlpha.toFixed(3)})`;
+                const frozenStrokeColor = `rgba(29,211,176,${randomStrokeAlpha.toFixed(3)})`;
 
                 const spanRect = spanData.el.getBoundingClientRect();
                 const centerX  = spanRect.left - heroRect.left + spanRect.width  / 2;
                 const centerY  = spanRect.top  - heroRect.top  + spanRect.height / 2;
-                const width    = spanRect.width;
-                const height   = spanRect.height;
 
-                // Freeze the colour at its current alpha
-                const frozenFillColor   = `rgba(29,211,176,${fillAlpha.toFixed(3)})`;
-                const frozenStrokeColor = `rgba(29,211,176,${(0.22 + strokeAlpha).toFixed(3)})`;
+                const cs         = getComputedStyle(spanData.el);
+                const fontSize   = parseFloat(cs.fontSize);
+                const fontFamily = cs.fontFamily;
 
-                const computedStyle = getComputedStyle(spanData.el);
-                const fontSize      = parseFloat(computedStyle.fontSize);
-                const fontFamily    = computedStyle.fontFamily;
-
-                const body = makeLetterBody(centerX, centerY, width, height);
-                // ZAPs fall straight down with minimal horizontal scatter
-                Body.setVelocity(body, { x: (Math.random() - 0.5) * 2, y: -(Math.random() * 3 + 1) });
+                const body = makeLetterBody(centerX, centerY, spanRect.width, spanRect.height);
+                Body.setVelocity(body, { x: (Math.random() - 0.5) * 2, y: -(Math.random() * 2 + 0.5) });
                 Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
                 Composite.add(physicsEngine.world, body);
 
-                // Hide the DOM span — we'll draw it on canvas instead
                 spanData.el.style.visibility = 'hidden';
 
                 physicsZapLetters.push({
                     body,
-                    char:             spanData.el.textContent,
+                    char:        spanData.el.textContent,
                     fontSize,
                     fontFamily,
-                    fontStyle:        'italic',
-                    fontWeight:       '700',
-                    fillColor:        frozenFillColor,
-                    strokeColor:      frozenStrokeColor,
-                    domSpan:          spanData.el,
-                    sleepFrames:      0
+                    fillColor:   frozenFillColor,
+                    strokeColor: frozenStrokeColor,
+                    domSpan:     spanData.el,
+                    sleepFrames: 0
                 });
             });
         }
 
-        // Mouse constraint for dragging
+        // Mouse drag constraint
         const matterMouse = Mouse.create(physicsCanvas);
         physicsMouseCon = MouseConstraint.create(physicsEngine, {
             mouse: matterMouse,
@@ -795,47 +834,40 @@ document.addEventListener('DOMContentLoaded', () => {
         // Draw loop
         function drawPhysicsFrame() {
             if (!chaosActive) return;
-            physicsAnimId = requestAnimationFrame(drawPhysicsFrame);
+            physicsAnimFrameId = requestAnimationFrame(drawPhysicsFrame);
 
             physicsCtx.clearRect(0, 0, sectionWidth, sectionHeight);
 
-            // Apply micro-sleep damping to all bodies
             [...physicsLetters, ...physicsZapLetters].forEach(applyMicroSleepDamping);
 
-            // Draw regular text letters
+            // Regular text characters
             physicsLetters.forEach(({ body, char, fontSize, fontFamily, fontStyle, fontWeight, color }) => {
-                const pos   = body.position;
-                const angle = body.angle;
-
                 physicsCtx.save();
-                physicsCtx.translate(pos.x, pos.y);
-                physicsCtx.rotate(angle);
-                physicsCtx.font           = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-                physicsCtx.fillStyle      = color;
-                physicsCtx.textAlign      = 'center';
-                physicsCtx.textBaseline   = 'middle';
-                physicsCtx.shadowColor    = 'rgba(255,252,242,0.8)';
-                physicsCtx.shadowBlur     = 8;
+                physicsCtx.translate(body.position.x, body.position.y);
+                physicsCtx.rotate(body.angle);
+                physicsCtx.font          = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+                physicsCtx.fillStyle     = color;
+                physicsCtx.textAlign     = 'center';
+                physicsCtx.textBaseline  = 'middle';
+                physicsCtx.shadowColor   = 'rgba(255,252,242,0.8)';
+                physicsCtx.shadowBlur    = 8;
                 physicsCtx.fillText(char, 0, 0);
                 physicsCtx.restore();
             });
 
-            // Draw teal ZAP background letters
-            physicsZapLetters.forEach(({ body, char, fontSize, fontFamily, fontStyle, fontWeight, fillColor, strokeColor }) => {
-                const pos   = body.position;
-                const angle = body.angle;
-
+            // Teal ZAP background characters
+            physicsZapLetters.forEach(({ body, char, fontSize, fontFamily, fillColor, strokeColor }) => {
                 physicsCtx.save();
-                physicsCtx.translate(pos.x, pos.y);
-                physicsCtx.rotate(angle);
-                physicsCtx.font           = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-                physicsCtx.fillStyle      = fillColor;
-                physicsCtx.strokeStyle    = strokeColor;
-                physicsCtx.lineWidth      = 1.5;
-                physicsCtx.textAlign      = 'center';
-                physicsCtx.textBaseline   = 'middle';
-                physicsCtx.shadowColor    = 'rgba(29,211,176,0.3)';
-                physicsCtx.shadowBlur     = 10;
+                physicsCtx.translate(body.position.x, body.position.y);
+                physicsCtx.rotate(body.angle);
+                physicsCtx.font          = `italic 700 ${fontSize}px ${fontFamily}`;
+                physicsCtx.fillStyle     = fillColor;
+                physicsCtx.strokeStyle   = strokeColor;
+                physicsCtx.lineWidth     = 1.5;
+                physicsCtx.textAlign     = 'center';
+                physicsCtx.textBaseline  = 'middle';
+                physicsCtx.shadowColor   = 'rgba(29,211,176,0.3)';
+                physicsCtx.shadowBlur    = 10;
                 physicsCtx.fillText(char, 0, 0);
                 physicsCtx.strokeText(char, 0, 0);
                 physicsCtx.restore();
@@ -852,16 +884,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!chaosActive) return;
         chaosActive = false;
 
-        cancelAnimationFrame(physicsAnimId);
-        physicsAnimId = null;
+        cancelAnimationFrame(physicsAnimFrameId);
+        physicsAnimFrameId = null;
 
-        if (physicsRunner)  { Runner.stop(physicsRunner); physicsRunner = null; }
+        if (physicsRunner)  { Runner.stop(physicsRunner);  physicsRunner  = null; }
         if (physicsEngine)  { World.clear(physicsEngine.world); Engine.clear(physicsEngine); physicsEngine = null; }
 
-        // Restore visibility of teal ZAP DOM spans
-        physicsZapLetters.forEach(({ domSpan }) => {
-            if (domSpan) domSpan.style.visibility = '';
-        });
+        // Unhide any ZAP spans we hid
+        physicsZapLetters.forEach(({ domSpan }) => { if (domSpan) domSpan.style.visibility = ''; });
 
         physicsLetters    = [];
         physicsZapLetters = [];
@@ -874,55 +904,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         heroSectionEl.classList.remove('chaos-active');
-
-        // Restore chaos button label
         chaosToggleButton.textContent = '💥';
 
-        // Re-run h1 and p entry animations
-        heroH1El.style.animation = 'none';
-        heroPEl.style.animation  = 'none';
-        void heroH1El.offsetWidth;
-        void heroPEl.offsetWidth;
-        heroH1El.style.opacity   = '0';
-        heroPEl.style.opacity    = '0';
-        heroH1El.style.animation = 'heroBounceIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards';
-        heroPEl.style.animation  = 'heroFadeFloatUp 0.7s ease-out 0.35s forwards';
+        // Replay h1 wave animation
+        if (heroH1El && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            triggerH1WaveAnimation();
+        }
 
-        // Clear the typewriter display and restart the animation from scratch
-        // so it starts cleanly rather than mid-word
+        // Replay paragraph fade-up
+        heroPEl.style.animation = 'none';
+        void heroPEl.offsetWidth;
+        heroPEl.style.opacity   = '0';
+        heroPEl.style.animation = 'heroFadeFloatUp 0.7s ease-out 0.35s forwards';
+
+        // Restart typewriter cleanly
         if (typewriterEl) typewriterEl.innerHTML = '';
-        currentCharIndex   = 0;
-        isDeletingMode     = false;
-        typewriterFrozen   = false;
+        currentCharIndex    = 0;
+        isDeletingMode      = false;
+        typewriterFrozen    = false;
         clearTimeout(typewriterTimeoutId);
         typewriterTimeoutId = setTimeout(animateTypewriter, 500);
     }
 
 
-    // ---- Toggle button ----
+    // ---- Toggle ----
 
     chaosToggleButton.addEventListener('click', () => {
-        if (chaosActive) {
-            tearDownChaosMode();
-        } else {
-            launchChaosMode();
-        }
+        if (chaosActive) { tearDownChaosMode(); } else { launchChaosMode(); }
     });
 
 
-    // ---- Resize handling ----
+    // ---- Resize ----
 
     window.addEventListener('resize', () => {
         if (!chaosActive || !physicsEngine) return;
-        const newWidth  = heroSectionEl.offsetWidth;
-        const newHeight = heroSectionEl.offsetHeight;
-
+        const w = heroSectionEl.offsetWidth;
+        const h = heroSectionEl.offsetHeight;
         wallBodies.forEach(wall => Composite.remove(physicsEngine.world, wall));
-        wallBodies = buildWalls(newWidth, newHeight);
+        wallBodies = buildWalls(w, h);
         Composite.add(physicsEngine.world, wallBodies);
-
-        physicsCanvas.width  = newWidth;
-        physicsCanvas.height = newHeight;
+        physicsCanvas.width  = w;
+        physicsCanvas.height = h;
     });
 
 });
