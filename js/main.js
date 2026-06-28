@@ -81,67 +81,67 @@ document.addEventListener('DOMContentLoaded', () => {
     const typewriterElement = document.getElementById('typewriter');
     const cursorElement     = document.querySelector('.cursor');
 
-    if (typewriterElement) {
-        const phraseList = [
-            'I do stuff.',
-            'I build software.',
-            'I build websites.',
-            'I run business.',
-            'I do graphics.',
-            'I make games.',
-            'Medicine'
-        ];
+    const phraseList = [
+        'I do stuff.',
+        'I build software.',
+        'I build websites.',
+        'I run business.',
+        'I do graphics.',
+        'I make games.',
+        'Medicine'
+    ];
 
-        const getRandomDelay = (minMs, maxMs) => Math.random() * (maxMs - minMs) + minMs;
+    let currentPhraseIndex = 0;
+    let currentCharIndex   = 0;
+    let isDeletingMode     = false;
+    let typewriterTimeoutId = null;
+    let typewriterFrozen   = false; // paused while chaos mode is active
 
-        let currentPhraseIndex = 0;
-        let currentCharIndex   = 0;
-        let isDeletingMode     = false;
+    const getRandomDelay = (minMs, maxMs) => Math.random() * (maxMs - minMs) + minMs;
 
-        function animateTypewriter() {
-            const currentPhrase = phraseList[currentPhraseIndex];
-            const currentChar   = currentPhrase.charAt(currentCharIndex);
+    function animateTypewriter() {
+        if (typewriterFrozen) return;
+        if (!typewriterElement) return;
 
-            if (cursorElement) cursorElement.classList.add('typing');
+        const currentPhrase = phraseList[currentPhraseIndex];
+        const currentChar   = currentPhrase.charAt(currentCharIndex);
 
-            if (!isDeletingMode) {
-                // Add next character using charAt — same approach as the reference
-                typewriterElement.innerHTML += currentChar;
-                currentCharIndex++;
+        if (cursorElement) cursorElement.classList.add('typing');
 
-                if (currentCharIndex === currentPhrase.length) {
-                    // Finished typing — pause, then switch to deleting
-                    if (cursorElement) cursorElement.classList.remove('typing');
-                    isDeletingMode = true;
-                    setTimeout(animateTypewriter, getRandomDelay(1400, 2000));
-                    return;
-                }
+        if (!isDeletingMode) {
+            typewriterElement.innerHTML += currentChar;
+            currentCharIndex++;
 
-                let delayMs = getRandomDelay(60, 140);
-                if (Math.random() < 0.08) delayMs += getRandomDelay(200, 500); // occasional hesitation
-                setTimeout(animateTypewriter, delayMs);
-
-            } else {
-                // Delete one character by slicing innerHTML
-                typewriterElement.innerHTML = currentPhrase.substring(0, currentCharIndex - 1);
-                currentCharIndex--;
-
-                if (currentCharIndex === 0) {
-                    // Finished deleting — move to next phrase
-                    if (cursorElement) cursorElement.classList.remove('typing');
-                    isDeletingMode     = false;
-                    currentPhraseIndex = (currentPhraseIndex + 1) % phraseList.length;
-                    setTimeout(animateTypewriter, getRandomDelay(300, 600));
-                    return;
-                }
-
-                let delayMs = getRandomDelay(40, 85);
-                if (Math.random() < 0.05) delayMs += getRandomDelay(150, 350); // occasional stumble
-                setTimeout(animateTypewriter, delayMs);
+            if (currentCharIndex === currentPhrase.length) {
+                if (cursorElement) cursorElement.classList.remove('typing');
+                isDeletingMode = true;
+                typewriterTimeoutId = setTimeout(animateTypewriter, getRandomDelay(1400, 2000));
+                return;
             }
-        }
 
-        // Kick off after short initial delay
+            let delayMs = getRandomDelay(60, 140);
+            if (Math.random() < 0.08) delayMs += getRandomDelay(200, 500);
+            typewriterTimeoutId = setTimeout(animateTypewriter, delayMs);
+
+        } else {
+            typewriterElement.innerHTML = currentPhrase.substring(0, currentCharIndex - 1);
+            currentCharIndex--;
+
+            if (currentCharIndex === 0) {
+                if (cursorElement) cursorElement.classList.remove('typing');
+                isDeletingMode     = false;
+                currentPhraseIndex = (currentPhraseIndex + 1) % phraseList.length;
+                typewriterTimeoutId = setTimeout(animateTypewriter, getRandomDelay(300, 600));
+                return;
+            }
+
+            let delayMs = getRandomDelay(40, 85);
+            if (Math.random() < 0.05) delayMs += getRandomDelay(150, 350);
+            typewriterTimeoutId = setTimeout(animateTypewriter, delayMs);
+        }
+    }
+
+    if (typewriterElement) {
         setTimeout(animateTypewriter, 800);
     }
 
@@ -161,29 +161,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const GROUP_SPACING     = 0.2;
         const HOVER_GLOW_RADIUS = 200;
 
-        // Alpha decay: how much glow drains per millisecond when no active source drives a letter.
         const GLOW_DECAY_RATE_PER_MS = 0.005;
-        // Epsilon threshold: alpha values at or below this are considered visually zero
-        const DECAY_EPSILON = 0.0005;
-
-        // Sentinel value stored in ripple.startTime to signal "not yet started".
-        // The first animation frame that sees this replaces it with the real timestamp,
-        // so the ripple always begins from frame 0 with no skipped progress.
-        const RIPPLE_PENDING_START = -1;
+        const DECAY_EPSILON          = 0.0005;
+        const RIPPLE_PENDING_START   = -1;
 
         let letterSpanData     = [];
         let canvasContext      = null;
         let activeRipples      = [];
         let animationFrameId   = null;
         let currentHoverPos    = null;
-        let lastFrameTimestamp = null; // used to compute delta-time for decay
+        let lastFrameTimestamp = null;
 
-        // Per-letter persistent glow state — decays smoothly between frames
-        // Parallel arrays (same index as letterSpanData) for speed
-        let letterDecayFill   = []; // current decayed fill alpha for each letter
-        let letterDecayStroke = []; // current decayed stroke alpha for each letter
+        let letterDecayFill   = [];
+        let letterDecayStroke = [];
 
-        // Returns true if ALL letters have decayed to at or below DECAY_EPSILON
         function isFullyDecayed() {
             return letterDecayFill.every(alpha => alpha <= DECAY_EPSILON) &&
                    letterDecayStroke.every(alpha => alpha <= DECAY_EPSILON);
@@ -195,13 +186,10 @@ document.addEventListener('DOMContentLoaded', () => {
             canvasContext = glowCanvasElement.getContext('2d');
         }
 
-        // Measure a string using the same font as .hero-zap span
         function measureLetterDimensions(textToMeasure) {
             const measureElement = document.createElement('span');
             measureElement.textContent = textToMeasure;
-            // Position off-screen but still in DOM so font applies
             measureElement.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;white-space:nowrap;';
-            // Mirror font properties from .hero-zap span
             measureElement.style.fontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-heading').trim() || "'Trajan Supreme',serif";
             measureElement.style.fontSize   = 'clamp(5rem, 11vw, 9rem)';
             measureElement.style.fontWeight = '700';
@@ -226,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const { w: measureCharWidth, h: rowHeight } = measureLetterDimensions('W');
             if (!measureCharWidth || !rowHeight) return;
 
-            // Measure the computed font-size (used for spacing calculations)
             const fontSizeProbe = document.createElement('span');
             fontSizeProbe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;font-family:\'Trajan Supreme\',serif;font-size:clamp(5rem,11vw,9rem);font-weight:700;line-height:1;';
             document.body.appendChild(fontSizeProbe);
@@ -263,7 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             zapGridContainer.appendChild(documentFragment);
 
-            // Recalculate centres from real rendered rects
             const heroRect = heroSectionElement.getBoundingClientRect();
             letterSpanData.forEach(spanDataPoint => {
                 const spanRect = spanDataPoint.el.getBoundingClientRect();
@@ -280,13 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
         function drawAnimationFrame(currentTimestamp) {
             if (!canvasContext) return;
 
-            // Initialise any pending ripples — stamp their start time on the first frame
-            // they're actually drawn, so rippleProgress always begins at 0 with no skipped frames
             activeRipples.forEach(ripple => {
                 if (ripple.startTime === RIPPLE_PENDING_START) ripple.startTime = currentTimestamp;
             });
 
-            // Delta-time in ms since last frame — used to advance the decay
             const deltaMs  = lastFrameTimestamp !== null ? currentTimestamp - lastFrameTimestamp : 0;
             lastFrameTimestamp = currentTimestamp;
             const decayStep = GLOW_DECAY_RATE_PER_MS * deltaMs;
@@ -296,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
             canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
             activeRipples = activeRipples.filter(ripple => currentTimestamp - ripple.startTime < ripple.duration);
 
-            // Draw hover canvas glow
             if (currentHoverPos) {
                 const hoverGradient = canvasContext.createRadialGradient(currentHoverPos.x, currentHoverPos.y, 0, currentHoverPos.x, currentHoverPos.y, HOVER_GLOW_RADIUS);
                 hoverGradient.addColorStop(0,   'rgba(29,211,176,0.3)');
@@ -306,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
             }
 
-            // Draw ripple canvas glows
             activeRipples.forEach(ripple => {
                 const rippleProgress   = (currentTimestamp - ripple.startTime) / ripple.duration;
                 const easeOutQuadratic = rippleProgress < 0.5 ? 2*rippleProgress*rippleProgress : 1 - Math.pow(-2*rippleProgress+2,2)/2;
@@ -319,12 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
             });
 
-            // Update each letter's glow:
-            // 1. Compute the target alpha driven by hover/ripples this frame.
-            // 2. If target > current decayed value → snap up immediately (responsive).
-            // 3. If target < current decayed value → drain toward target by decayStep (smooth fade).
             letterSpanData.forEach(({ el: letterEl, cx: letterCenterX, cy: letterCenterY }, letterIdx) => {
-                // --- compute this frame's driven target ---
                 let targetFill   = 0;
                 let targetStroke = 0;
 
@@ -349,14 +325,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
-                // --- apply snap-up / decay-down ---
                 let currentFill   = letterDecayFill[letterIdx];
                 let currentStroke = letterDecayStroke[letterIdx];
 
                 if (targetFill > currentFill) {
-                    currentFill = targetFill;                                        // snap up instantly
+                    currentFill = targetFill;
                 } else {
-                    currentFill = Math.max(targetFill, currentFill - decayStep);    // decay toward target
+                    currentFill = Math.max(targetFill, currentFill - decayStep);
                 }
 
                 if (targetStroke > currentStroke) {
@@ -365,15 +340,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentStroke = Math.max(targetStroke, currentStroke - decayStep);
                 }
 
-                // Hard-clamp to exactly 0 once below epsilon so no float remainder
-                // leaks into the paint step and causes persistent teal on glyph tips
                 currentFill   = currentFill   <= DECAY_EPSILON ? 0 : currentFill;
                 currentStroke = currentStroke <= DECAY_EPSILON ? 0 : currentStroke;
 
                 letterDecayFill[letterIdx]   = currentFill;
                 letterDecayStroke[letterIdx] = currentStroke;
 
-                // --- paint the letter ---
                 if (currentFill > 0 || currentStroke > 0) {
                     letterEl.style.color = `rgba(29,211,176,${currentFill.toFixed(3)})`;
                     letterEl.style.setProperty('-webkit-text-stroke-color', `rgba(29,211,176,${(0.22 + currentStroke).toFixed(3)})`);
@@ -382,14 +354,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Keep the loop alive while there are input sources OR letters haven't fully decayed
             const hasInputSource    = activeRipples.length > 0 || currentHoverPos !== null;
             const shouldKeepLooping = hasInputSource || !isFullyDecayed();
 
             if (shouldKeepLooping) {
                 animationFrameId = requestAnimationFrame(drawAnimationFrame);
             } else {
-                // Everything has fully decayed past epsilon — final hard cleanup
                 animationFrameId   = null;
                 lastFrameTimestamp = null;
                 canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -399,14 +369,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function startAnimationLoop() {
             if (!animationFrameId) {
-                lastFrameTimestamp = null; // reset so first frame delta is 0
+                lastFrameTimestamp = null;
                 animationFrameId = requestAnimationFrame(drawAnimationFrame);
             }
         }
 
         function stopHoverGlow() {
             currentHoverPos = null;
-            // If everything is already decayed, no need to keep the loop running
             if (isFullyDecayed()) {
                 if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
                 lastFrameTimestamp = null;
@@ -414,12 +383,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 letterSpanData.forEach(({ el: letterEl }) => resetLetterToDefault(letterEl));
                 return;
             }
-            // Otherwise let the loop keep running — it will decay naturally and stop itself
         }
 
         (document.fonts ? document.fonts.ready : Promise.resolve()).then(buildLetterGrid);
 
-        // Grab the CTA button once for extended proximity detection
         const ctaButton        = heroSectionElement.querySelector('a.btn, button.btn, .hero-cta, a[href], button') || null;
         const BUTTON_EXTEND_PX = 10;
 
@@ -438,11 +405,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isInExtendedButtonZone = pointerX >= buttonLeft  && pointerX <= buttonRight &&
                                                pointerY >= buttonTop   && pointerY <= buttonBottom;
 
-                // Toggle the enlarged/recoloured state via CSS class
                 ctaButton.classList.toggle('is-proximity-active', isInExtendedButtonZone);
 
                 if (isInExtendedButtonZone) {
-                    // Clamp glow position to the real button edge so letters around it stay lit
                     pointerX = Math.min(Math.max(pointerX, buttonLeft  + BUTTON_EXTEND_PX), buttonRight  - BUTTON_EXTEND_PX);
                     pointerY = Math.min(Math.max(pointerY, buttonTop   + BUTTON_EXTEND_PX), buttonBottom - BUTTON_EXTEND_PX);
                 }
@@ -451,15 +416,13 @@ document.addEventListener('DOMContentLoaded', () => {
             currentHoverPos = { x: pointerX, y: pointerY };
             startAnimationLoop();
         });
-        // Remove proximity class when the cursor leaves the hero entirely
+
         heroMouseTracker.addEventListener('mouseleave', () => {
             if (ctaButton) ctaButton.classList.remove('is-proximity-active');
         });
         heroMouseTracker.addEventListener('mouseleave', stopHoverGlow);
         heroMouseTracker.addEventListener('click', clickEvent => {
             const heroRect = heroSectionElement.getBoundingClientRect();
-            // startTime is set to RIPPLE_PENDING_START so the first animation frame
-            // stamps the real timestamp — ripple always begins at progress 0
             activeRipples.push({
                 x:         clickEvent.clientX - heroRect.left,
                 y:         clickEvent.clientY - heroRect.top,
@@ -474,28 +437,19 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', () => { clearTimeout(resizeTimeoutId); resizeTimeoutId = setTimeout(buildLetterGrid, 150); });
     }
 
+
     // ----------------------------------------
     // 5. PRIMARY BUTTON POSITION-AWARE RIPPLE
     // ----------------------------------------
-    // On mouseenter: a yellow blob expands from the cursor's entry point.
-    // On mouseleave: the blob contracts back to the cursor's exit point.
-    // The blob's top/left are set to the cursor position; transform: translate(-50%,-50%)
-    // keeps it centred on that point. Width/height transition handles the grow/shrink.
-
-    // Blob needs to be large enough to cover the whole button from any corner entry point.
-    // The diagonal of the button is the maximum distance, so we overshoot it a bit.
     function getButtonBlobFullSize(buttonEl) {
         return Math.max(buttonEl.offsetWidth, buttonEl.offsetHeight) * 2.5 + 'px';
     }
 
     document.querySelectorAll('.button-primary').forEach(buttonEl => {
-
-        // Wrap text in a span so it sits above the blob via z-index (CSS handles this)
         if (!buttonEl.querySelector('span')) {
             buttonEl.innerHTML = `<span>${buttonEl.innerHTML}</span>`;
         }
 
-        // Create the ripple blob element and append it inside the button
         const rippleBlobEl = document.createElement('span');
         rippleBlobEl.classList.add('button-ripple-blob');
         rippleBlobEl.style.width  = '0';
@@ -543,5 +497,289 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         document.querySelectorAll('.section').forEach(sectionElement => sectionElement.classList.add('visible'));
     }
+
+
+    // ----------------------------------------
+    // 7. CHAOS MODE — PHYSICS TEXT EXPLOSION
+    // ----------------------------------------
+    const chaosToggleButton = document.getElementById('chaosToggleBtn');
+    const physicsCanvas     = document.getElementById('physicsCanvas');
+    const heroH1El          = document.getElementById('heroH1');
+    const heroPEl           = document.getElementById('heroP');
+    const viewWorkBtnEl     = document.getElementById('viewWorkBtn');
+    const typewriterEl      = document.getElementById('typewriter');
+    const heroSectionEl     = document.querySelector('.hero-section');
+
+    if (!chaosToggleButton || !physicsCanvas || !window.Matter) return;
+
+    // Matter.js module aliases
+    const { Engine, Render: MatterRender, Runner, Bodies, Body, Composite, Events, Mouse, MouseConstraint, World } = Matter;
+
+    let chaosActive      = false;
+    let physicsEngine    = null;
+    let physicsRunner    = null;
+    let physicsMouseCon  = null;
+    let physicsAnimId    = null;
+    let physicsLetters   = []; // array of { body, char, fontSize, color, fontFamily, fontStyle, fontWeight, rotation }
+    let physicsCtx       = null;
+    let wallBodies       = [];
+
+    // Snapshot of typewriter text at moment chaos is triggered
+    let frozenTypewriterText = '';
+
+    // ---- helpers ----
+
+    // Collect all individual characters from a DOM element,
+    // measuring each character's pixel position and style.
+    function harvestCharactersFromElement(domEl, heroRect) {
+        const harvested = [];
+        if (!domEl || domEl.offsetParent === null) return harvested;
+
+        const computedStyle = getComputedStyle(domEl);
+        const fontSize      = parseFloat(computedStyle.fontSize);
+        const fontFamily    = computedStyle.fontFamily;
+        const fontStyle     = computedStyle.fontStyle;
+        const fontWeight    = computedStyle.fontWeight;
+        const color         = computedStyle.color;
+
+        // We split the element's text into individual characters, wrap each in a
+        // temporary <span>, measure its bounding rect, then remove the spans.
+        const originalHTML = domEl.innerHTML;
+        const textContent  = domEl.textContent;
+
+        // Replace the element's contents with one <span> per character
+        domEl.innerHTML = textContent.split('').map(ch =>
+            ch === ' ' ? `<span style="white-space:pre"> </span>` : `<span>${ch}</span>`
+        ).join('');
+
+        domEl.querySelectorAll('span').forEach((charSpan, charIndex) => {
+            const spanRect = charSpan.getBoundingClientRect();
+            const centerX  = spanRect.left - heroRect.left + spanRect.width  / 2;
+            const centerY  = spanRect.top  - heroRect.top  + spanRect.height / 2;
+            const char     = textContent[charIndex];
+
+            if (char && char !== ' ' && spanRect.width > 0) {
+                harvested.push({
+                    char,
+                    centerX,
+                    centerY,
+                    width:      Math.max(spanRect.width,  4),
+                    height:     Math.max(spanRect.height, 4),
+                    fontSize,
+                    fontFamily,
+                    fontStyle,
+                    fontWeight,
+                    color
+                });
+            }
+        });
+
+        // Restore original content
+        domEl.innerHTML = originalHTML;
+
+        return harvested;
+    }
+
+    function buildWalls(sectionWidth, sectionHeight) {
+        const wallThickness = 60;
+        const floorBody  = Bodies.rectangle(sectionWidth / 2, sectionHeight + wallThickness / 2, sectionWidth * 3, wallThickness, { isStatic: true, label: 'floor'  });
+        const leftBody   = Bodies.rectangle(-wallThickness / 2, sectionHeight / 2, wallThickness, sectionHeight * 3, { isStatic: true, label: 'left'   });
+        const rightBody  = Bodies.rectangle(sectionWidth + wallThickness / 2, sectionHeight / 2, wallThickness, sectionHeight * 3, { isStatic: true, label: 'right'  });
+        // No ceiling so letters fly up then fall back naturally
+        return [floorBody, leftBody, rightBody];
+    }
+
+    function launchChaosMode() {
+        if (chaosActive) return;
+        chaosActive = true;
+
+        // Freeze typewriter so text doesn't change mid-chaos
+        typewriterFrozen    = true;
+        frozenTypewriterText = typewriterEl ? typewriterEl.textContent : '';
+        clearTimeout(typewriterTimeoutId);
+
+        heroSectionEl.classList.add('chaos-active');
+
+        const sectionRect   = heroSectionEl.getBoundingClientRect();
+        const sectionWidth  = heroSectionEl.offsetWidth;
+        const sectionHeight = heroSectionEl.offsetHeight;
+
+        // Size the physics canvas to match the hero section
+        physicsCanvas.width  = sectionWidth;
+        physicsCanvas.height = sectionHeight;
+        physicsCtx = physicsCanvas.getContext('2d');
+
+        // Create Matter.js engine
+        physicsEngine = Engine.create({ gravity: { y: 1.5 } });
+
+        // Harvest characters before hiding DOM text
+        const heroRect        = heroSectionEl.getBoundingClientRect();
+        const h1Characters    = harvestCharactersFromElement(heroH1El, heroRect);
+        const h2Characters    = harvestCharactersFromElement(
+            document.querySelector('#heroText h2'), heroRect
+        );
+        const pCharacters     = harvestCharactersFromElement(heroPEl, heroRect);
+
+        // Harvest the "View My Work" button text
+        const btnTextEl = viewWorkBtnEl.querySelector('span') || viewWorkBtnEl;
+        const btnCharacters = harvestCharactersFromElement(btnTextEl, heroRect);
+
+        // Adjust button characters' colors to match button text styling
+        const btnComputedColor = getComputedStyle(viewWorkBtnEl).color;
+        btnCharacters.forEach(ch => { ch.color = btnComputedColor; });
+
+        const allCharacterData = [...h1Characters, ...h2Characters, ...pCharacters, ...btnCharacters];
+
+        // Build walls
+        wallBodies = buildWalls(sectionWidth, sectionHeight);
+        Composite.add(physicsEngine.world, wallBodies);
+
+        // Create a physics body per character
+        physicsLetters = allCharacterData.map(charData => {
+            const body = Bodies.rectangle(
+                charData.centerX,
+                charData.centerY,
+                charData.width  * 0.85, // slightly narrower for nicer collisions
+                charData.height * 0.85,
+                {
+                    restitution: 0.45,  // bounciness
+                    friction:    0.3,
+                    density:     0.002,
+                    label:       'letter'
+                }
+            );
+
+            // Give each letter a small random initial velocity — slightly upward
+            // with horizontal spread, as if they burst outward
+            const randomVelocityX = (Math.random() - 0.5) * 14;
+            const randomVelocityY = -(Math.random() * 8 + 3);
+            Body.setVelocity(body, { x: randomVelocityX, y: randomVelocityY });
+            Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.3);
+
+            Composite.add(physicsEngine.world, body);
+
+            return {
+                body,
+                char:       charData.char,
+                fontSize:   charData.fontSize,
+                fontFamily: charData.fontFamily,
+                fontStyle:  charData.fontStyle,
+                fontWeight: charData.fontWeight,
+                color:      charData.color
+            };
+        });
+
+        // Attach mouse constraint so user can drag/toss letters
+        const matterMouse = Mouse.create(physicsCanvas);
+        physicsMouseCon = MouseConstraint.create(physicsEngine, {
+            mouse: matterMouse,
+            constraint: {
+                stiffness: 0.2,
+                render: { visible: false }
+            }
+        });
+        Composite.add(physicsEngine.world, physicsMouseCon);
+
+        // Run the engine
+        physicsRunner = Runner.create();
+        Runner.run(physicsRunner, physicsEngine);
+
+        // Draw loop
+        function drawPhysicsFrame() {
+            if (!chaosActive) return;
+            physicsAnimId = requestAnimationFrame(drawPhysicsFrame);
+
+            physicsCtx.clearRect(0, 0, sectionWidth, sectionHeight);
+
+            physicsLetters.forEach(({ body, char, fontSize, fontFamily, fontStyle, fontWeight, color }) => {
+                const pos   = body.position;
+                const angle = body.angle;
+
+                physicsCtx.save();
+                physicsCtx.translate(pos.x, pos.y);
+                physicsCtx.rotate(angle);
+
+                physicsCtx.font        = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+                physicsCtx.fillStyle   = color;
+                physicsCtx.textAlign   = 'center';
+                physicsCtx.textBaseline = 'middle';
+                // Soft text shadow to keep legibility against the ZAP background grid
+                physicsCtx.shadowColor   = 'rgba(255,252,242,0.8)';
+                physicsCtx.shadowBlur    = 8;
+                physicsCtx.fillText(char, 0, 0);
+
+                physicsCtx.restore();
+            });
+        }
+
+        drawPhysicsFrame();
+    }
+
+    function tearDownChaosMode() {
+        if (!chaosActive) return;
+        chaosActive = false;
+
+        // Stop draw loop
+        cancelAnimationFrame(physicsAnimId);
+        physicsAnimId = null;
+
+        // Stop physics runner
+        if (physicsRunner) { Runner.stop(physicsRunner); physicsRunner = null; }
+
+        // Clear physics world
+        if (physicsEngine) { World.clear(physicsEngine.world); Engine.clear(physicsEngine); physicsEngine = null; }
+
+        physicsLetters  = [];
+        wallBodies      = [];
+        physicsMouseCon = null;
+
+        // Clear the canvas
+        if (physicsCtx) { physicsCtx.clearRect(0, 0, physicsCanvas.width, physicsCanvas.height); physicsCtx = null; }
+
+        // Restore the hero section appearance
+        heroSectionEl.classList.remove('chaos-active');
+
+        // Re-run h1 and p animations so they feel like a fresh restore
+        heroH1El.style.animation = 'none';
+        heroPEl.style.animation  = 'none';
+
+        // Trigger reflow so removing the animation class is registered before we re-add it
+        void heroH1El.offsetWidth;
+        void heroPEl.offsetWidth;
+
+        heroH1El.style.opacity   = '0';
+        heroPEl.style.opacity    = '0';
+        heroH1El.style.animation = 'heroBounceIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards';
+        heroPEl.style.animation  = 'heroFadeFloatUp 0.7s ease-out 0.35s forwards';
+
+        // Unfreeze typewriter
+        typewriterFrozen = false;
+        setTimeout(animateTypewriter, 400);
+    }
+
+    chaosToggleButton.addEventListener('click', () => {
+        if (chaosActive) {
+            tearDownChaosMode();
+        } else {
+            launchChaosMode();
+        }
+    });
+
+    // Resize: rebuild walls if chaos is active
+    window.addEventListener('resize', () => {
+        if (!chaosActive || !physicsEngine) return;
+        const newWidth  = heroSectionEl.offsetWidth;
+        const newHeight = heroSectionEl.offsetHeight;
+
+        // Remove old walls
+        wallBodies.forEach(wall => Composite.remove(physicsEngine.world, wall));
+
+        // Add new walls
+        wallBodies = buildWalls(newWidth, newHeight);
+        Composite.add(physicsEngine.world, wallBodies);
+
+        physicsCanvas.width  = newWidth;
+        physicsCanvas.height = newHeight;
+    });
 
 });

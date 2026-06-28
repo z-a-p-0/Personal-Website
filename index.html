@@ -46,15 +46,18 @@
             <!-- Layer 2: ZAP letters -->
             <div class="hero-zap" id="zapGrid" aria-hidden="true"></div>
             <!-- Layer 3: text content -->
-            <div class="hero-text container">
-                <h1>Hello World, I'm ZAP!</h1>
+            <div class="hero-text container" id="heroText">
+                <h1 id="heroH1">Hello World, I'm ZAP!</h1>
                 <h2><span id="typewriter"></span><span class="cursor" aria-hidden="true">|</span></h2>
-                <p>You found me! Welcome to all the various things I do... though there's not enough space to list it all here. But you can find out all about me here!</p>
+                <p id="heroP">You found me! Welcome to all the various things I do... though there's not enough space to list it all here. But you can find out all about me here!</p>
             </div>
-            <!-- Layer 4: button -->
-            <div class="hero-cta">
-                <a href="#portfolio" class="button button-primary">View My Work</a>
+            <!-- Layer 4: buttons -->
+            <div class="hero-cta" id="heroCta">
+                <a href="#portfolio" class="button button-primary" id="viewWorkBtn">View My Work</a>
+                <button class="button button-chaos" id="chaosToggleBtn" aria-label="Toggle chaos mode">💥</button>
             </div>
+            <!-- Physics canvas — sits behind text, above ZAP grid -->
+            <canvas id="physicsCanvas" aria-hidden="true"></canvas>
             <!-- Layer 5: mouse tracker (covers everything, pointer-events only) -->
             <div class="hero-mouse" id="heroMouse" aria-hidden="true"></div>
         </section>
@@ -119,6 +122,8 @@
         </div>
     </footer>
 
+    <!-- Matter.js physics engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <script src="./js/main.js"></script>
 </body>
-</html> 
+</html>

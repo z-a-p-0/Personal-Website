@@ -223,16 +223,101 @@ section {
     font-size: 1.2rem;
 }
 
+/* ---- Hero H1 bounce-in animation ---- */
+@keyframes heroBounceIn {
+    0%   { opacity: 0; transform: translateY(-60px) scaleY(1.1); }
+    55%  { opacity: 1; transform: translateY(14px) scaleY(0.95); }
+    75%  { transform: translateY(-8px) scaleY(1.02); }
+    90%  { transform: translateY(4px) scaleY(0.99); }
+    100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+#heroH1 {
+    opacity: 0;
+    animation: heroBounceIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+
+/* ---- Hero P fade + float up animation ---- */
+@keyframes heroFadeFloatUp {
+    0%   { opacity: 0; transform: translateY(28px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+#heroP {
+    opacity: 0;
+    animation: heroFadeFloatUp 0.7s ease-out 0.7s forwards;
+}
+
+/* When chaos mode is active, hide the original DOM text elements */
+.hero-section.chaos-active .hero-text,
+.hero-section.chaos-active .hero-cta #viewWorkBtn {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* The physics canvas — sits between ZAP grid and text, only visible in chaos mode */
+#physicsCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.hero-section.chaos-active #physicsCanvas {
+    pointer-events: all;
+    opacity: 1;
+}
+
 /* Layer 4: button — wrapper passes pointer events through so tracker still fires */
 .hero-cta {
     position: relative;
     z-index: 6;
     margin-top: 8px;
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 
 .hero-cta .button {
     pointer-events: all;
+}
+
+/* Chaos toggle button */
+.button-chaos {
+    pointer-events: all;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(41,41,41,0.2);
+    border-radius: 50px;
+    padding: 10px 18px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: transform 0.2s, background 0.2s, border-color 0.2s;
+    line-height: 1;
+}
+
+.button-chaos:hover {
+    transform: scale(1.1) rotate(-5deg);
+    background: rgba(255,186,73,0.2);
+    border-color: var(--accent-color);
+}
+
+/* In chaos mode, chaos button pulses to indicate it can restore */
+.hero-section.chaos-active .button-chaos {
+    background: rgba(255,186,73,0.3);
+    border-color: var(--accent-color);
+    animation: chaosButtonPulse 2s ease-in-out infinite;
+}
+
+@keyframes chaosButtonPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,186,73,0.4); }
+    50%       { box-shadow: 0 0 0 8px rgba(255,186,73,0); }
 }
 
 /* Layer 5: full-cover mouse tracker */
@@ -241,6 +326,12 @@ section {
     inset: 0;
     z-index: 5;
     cursor: default;
+}
+
+/* In chaos mode the mouse tracker drops below the physics canvas so
+   Matter.js mouse constraint can capture drag events */
+.hero-section.chaos-active .hero-mouse {
+    z-index: 3;
 }
 
 /* ABOUT */
@@ -379,4 +470,15 @@ section {
     .hero-text h2 { font-size: 1.4rem; }
     .hero-text p  { font-size: 1rem; }
     .section h3   { font-size: 2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #heroH1 {
+        opacity: 1;
+        animation: none;
+    }
+    #heroP {
+        opacity: 1;
+        animation: none;
+    }
 }
