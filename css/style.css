@@ -30,9 +30,7 @@
     padding: 0;
 }
 
-html {
-    scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
     font-family: var(--font-body);
@@ -48,12 +46,8 @@ h1, h2, h3, h4 {
     line-height: 1.1;
 }
 
-img {
-    max-width: 100%;
-    display: block;
-}
+img { max-width: 100%; display: block; }
 
-/* Keyboard focus styles */
 :focus-visible {
     outline: 3px solid var(--primary-color);
     outline-offset: 3px;
@@ -66,11 +60,8 @@ img {
     padding: 0 20px;
 }
 
-section {
-    padding: 80px 0;
-}
+section { padding: 80px 0; }
 
-/* Scroll animation base state */
 .section {
     opacity: 0;
     transform: translateY(24px);
@@ -83,11 +74,7 @@ section {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .section {
-        opacity: 1;
-        transform: none;
-        transition: none;
-    }
+    .section { opacity: 1; transform: none; transition: none; }
 }
 
 
@@ -117,11 +104,7 @@ section {
     color: var(--primary-color);
 }
 
-.navbar ul {
-    display: flex;
-    list-style: none;
-    gap: 4px;
-}
+.navbar ul { display: flex; list-style: none; gap: 4px; }
 
 .navbar li a {
     text-decoration: none;
@@ -138,7 +121,6 @@ section {
     border-bottom-color: var(--primary-color);
 }
 
-/* Mobile toggle — hidden on desktop */
 .menu-toggle {
     display: none;
     background: none;
@@ -152,10 +134,8 @@ section {
 
 
 /* ============================================ */
-/* 3. SECTIONS                                  */
+/* 3. HERO SECTION                              */
 /* ============================================ */
-
-/* HERO */
 .hero-section {
     padding: 120px 0;
     text-align: center;
@@ -164,7 +144,7 @@ section {
     overflow: hidden;
 }
 
-/* Layer 1: teal radial glow canvas */
+/* Layer 1 — teal glow canvas */
 .hero-glow {
     position: absolute;
     inset: 0;
@@ -174,7 +154,7 @@ section {
     z-index: 1;
 }
 
-/* Layer 2: ZAP letter grid */
+/* Layer 2 — ZAP background letters */
 .hero-zap {
     position: absolute;
     inset: 0;
@@ -198,32 +178,23 @@ section {
     white-space: nowrap;
 }
 
-/* Layer 3: hero text */
+/* Layer 3 — hero text */
 .hero-text {
     position: relative;
     z-index: 3;
     pointer-events: none;
-    text-shadow: -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2, 1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2, -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2, 1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2;
+    text-shadow:
+        -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2,
+         1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2,
+        -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2,
+         1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2;
 }
 
-.hero-text h1 {
-    font-size: clamp(3rem, 6vw, 5rem);
-    margin-bottom: 0.5rem;
-}
+.hero-text h1 { font-size: clamp(3rem, 6vw, 5rem); margin-bottom: 0.5rem; }
+.hero-text h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--secondary-color); margin-bottom: 1.5rem; }
+.hero-text p  { max-width: 700px; margin: 0 auto 30px auto; font-size: 1.2rem; }
 
-.hero-text h2 {
-    font-size: clamp(1.8rem, 4vw, 2.5rem);
-    color: var(--secondary-color);
-    margin-bottom: 1.5rem;
-}
-
-.hero-text p {
-    max-width: 700px;
-    margin: 0 auto 30px auto;
-    font-size: 1.2rem;
-}
-
-/* ---- Hero H1 bounce-in animation ---- */
+/* ---- Hero H1 bounce-in ---- */
 @keyframes heroBounceIn {
     0%   { opacity: 0; transform: translateY(-60px) scaleY(1.1); }
     55%  { opacity: 1; transform: translateY(14px) scaleY(0.95); }
@@ -237,7 +208,7 @@ section {
     animation: heroBounceIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
 }
 
-/* ---- Hero P fade + float up animation ---- */
+/* ---- Hero P fade + float up ---- */
 @keyframes heroFadeFloatUp {
     0%   { opacity: 0; transform: translateY(28px); }
     100% { opacity: 1; transform: translateY(0); }
@@ -248,14 +219,14 @@ section {
     animation: heroFadeFloatUp 0.7s ease-out 0.7s forwards;
 }
 
-/* When chaos mode is active, hide the original DOM text elements */
+/* Hide original DOM text when chaos is active */
 .hero-section.chaos-active .hero-text,
 .hero-section.chaos-active .hero-cta #viewWorkBtn {
     visibility: hidden;
     pointer-events: none;
 }
 
-/* The physics canvas — sits between ZAP grid and text, only visible in chaos mode */
+/* Physics canvas */
 #physicsCanvas {
     position: absolute;
     inset: 0;
@@ -272,7 +243,7 @@ section {
     opacity: 1;
 }
 
-/* Layer 4: button — wrapper passes pointer events through so tracker still fires */
+/* Layer 4 — CTA button row */
 .hero-cta {
     position: relative;
     z-index: 6;
@@ -281,46 +252,118 @@ section {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
 }
 
-.hero-cta .button {
-    pointer-events: all;
-}
+.hero-cta .button { pointer-events: all; }
 
-/* Chaos toggle button */
+/* ---- Chaos button — default state ---- */
 .button-chaos {
     pointer-events: all;
-    background: rgba(255,255,255,0.15);
-    border: 2px solid rgba(41,41,41,0.2);
+    background: var(--accent-color);
+    border: 2px solid var(--accent-color);
     border-radius: 50px;
-    padding: 10px 18px;
-    font-size: 1.1rem;
+    padding: 10px 22px;
+    font-size: 1rem;
+    font-family: var(--font-body);
+    font-weight: 700;
+    color: var(--dark-text);
     cursor: pointer;
-    backdrop-filter: blur(4px);
-    transition: transform 0.2s, background 0.2s, border-color 0.2s;
-    line-height: 1;
+    transition: background 0.25s, border-color 0.25s, transform 0.2s,
+                box-shadow 0.25s, color 0.25s,
+                /* positional transitions for chaos-active slide */
+                right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                bottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                position 0s;
+    box-shadow: 0 4px 14px rgba(255, 186, 73, 0.35);
 }
 
 .button-chaos:hover {
-    transform: scale(1.1) rotate(-5deg);
-    background: rgba(255,186,73,0.2);
-    border-color: var(--accent-color);
+    background: #ffca6e;
+    border-color: #ffca6e;
+    transform: scale(1.07);
+    box-shadow: 0 6px 22px rgba(255, 186, 73, 0.6);
 }
 
-/* In chaos mode, chaos button pulses to indicate it can restore */
+/* Chaos active — button floats to middle-right, turns teal */
 .hero-section.chaos-active .button-chaos {
-    background: rgba(255,186,73,0.3);
-    border-color: var(--accent-color);
-    animation: chaosButtonPulse 2s ease-in-out infinite;
+    position: absolute;
+    right: 32px;
+    bottom: 32px;
+    z-index: 8;
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--light-text);
+    box-shadow: 0 4px 18px rgba(29, 211, 176, 0.5);
+    transform: none;
 }
 
-@keyframes chaosButtonPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255,186,73,0.4); }
-    50%       { box-shadow: 0 0 0 8px rgba(255,186,73,0); }
+.hero-section.chaos-active .button-chaos:hover {
+    background: #25e8c2;
+    border-color: #25e8c2;
+    box-shadow: 0 6px 28px rgba(29, 211, 176, 0.7);
+    transform: scale(1.07);
 }
 
-/* Layer 5: full-cover mouse tracker */
+/* ---- Gravity slider panel ---- */
+.gravity-slider-panel {
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+
+    /* hidden by default, shown in chaos mode */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.hero-section.chaos-active .gravity-slider-panel {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.gravity-label {
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--dark-text);
+    opacity: 0.6;
+    user-select: none;
+}
+
+.gravity-readout {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--primary-color);
+    background: rgba(29,211,176,0.1);
+    border: 1px solid rgba(29,211,176,0.3);
+    border-radius: 6px;
+    padding: 3px 6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Vertical range input */
+.gravity-slider {
+    -webkit-appearance: slider-vertical;
+    appearance: slider-vertical;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 28px;
+    height: 160px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+    background: transparent;
+}
+
+/* Layer 5 — mouse tracker */
 .hero-mouse {
     position: absolute;
     inset: 0;
@@ -328,18 +371,17 @@ section {
     cursor: default;
 }
 
-/* In chaos mode the mouse tracker drops below the physics canvas so
-   Matter.js mouse constraint can capture drag events */
+/* In chaos mode drop tracker below physics canvas so Matter.js gets mouse events */
 .hero-section.chaos-active .hero-mouse {
     z-index: 3;
 }
 
-/* ABOUT */
-.about-me {
-    background-color: var(--white);
-}
 
-/* Shared section heading */
+/* ============================================ */
+/* 4. OTHER SECTIONS                            */
+/* ============================================ */
+.about-me { background-color: var(--white); }
+
 .section h3 {
     font-size: 2.5rem;
     margin-bottom: 30px;
@@ -347,10 +389,7 @@ section {
     color: var(--secondary-color);
 }
 
-/* PORTFOLIO */
-.portfolio-showcase {
-    background-color: #f8f5f1;
-}
+.portfolio-showcase { background-color: #f8f5f1; }
 
 .project-grid {
     display: grid;
@@ -359,19 +398,12 @@ section {
     margin-top: 10px;
 }
 
-/* CONTACT */
-.contact-form-section {
-    background-color: var(--light-bg);
-}
-
-.contact-intro {
-    text-align: center;
-    margin-bottom: 40px;
-}
+.contact-form-section { background-color: var(--light-bg); }
+.contact-intro { text-align: center; margin-bottom: 40px; }
 
 
 /* ============================================ */
-/* 4. FOOTER                                    */
+/* 5. FOOTER                                    */
 /* ============================================ */
 .footer {
     background-color: #292929;
@@ -387,9 +419,7 @@ section {
     padding: 10px 20px;
 }
 
-.footer p {
-    color: var(--light-text);
-}
+.footer p { color: var(--light-text); }
 
 .social-links a {
     color: var(--light-text);
@@ -398,13 +428,11 @@ section {
     transition: color 0.3s;
 }
 
-.social-links a:hover {
-    color: var(--primary-color);
-}
+.social-links a:hover { color: var(--primary-color); }
 
 
 /* ============================================ */
-/* 5. MEDIA QUERIES                             */
+/* 6. MEDIA QUERIES                             */
 /* ============================================ */
 @media (max-width: 992px) {
     section { padding: 60px 0; }
@@ -413,10 +441,7 @@ section {
 }
 
 @media (max-width: 768px) {
-    /* Mobile nav */
-    .menu-toggle {
-        display: block;
-    }
+    .menu-toggle { display: block; }
 
     .navbar {
         display: none;
@@ -430,14 +455,9 @@ section {
         padding: 12px 0;
     }
 
-    .navbar.is-active {
-        display: block;
-    }
+    .navbar.is-active { display: block; }
 
-    .navbar ul {
-        flex-direction: column;
-        gap: 0;
-    }
+    .navbar ul { flex-direction: column; gap: 0; }
 
     .navbar li a {
         padding: 14px 20px;
@@ -451,18 +471,13 @@ section {
         background-color: #f5f5f5;
     }
 
-    /* Sections */
     .project-grid { grid-template-columns: 1fr; }
 
-    .footer-content {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
-    }
+    .footer-content { flex-direction: column; gap: 16px; text-align: center; }
+    .social-links a { margin: 0 10px; }
 
-    .social-links a {
-        margin: 0 10px;
-    }
+    .gravity-slider-panel { left: 8px; }
+    .gravity-slider { height: 120px; }
 }
 
 @media (max-width: 480px) {
@@ -473,12 +488,6 @@ section {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #heroH1 {
-        opacity: 1;
-        animation: none;
-    }
-    #heroP {
-        opacity: 1;
-        animation: none;
-    }
+    #heroH1 { opacity: 1; animation: none; }
+    #heroP  { opacity: 1; animation: none; }
 }

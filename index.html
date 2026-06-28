@@ -56,9 +56,18 @@
                 <a href="#portfolio" class="button button-primary" id="viewWorkBtn">View My Work</a>
                 <button class="button button-chaos" id="chaosToggleBtn" aria-label="Toggle chaos mode">💥</button>
             </div>
-            <!-- Physics canvas — sits behind text, above ZAP grid -->
+            <!-- Physics canvas — above ZAP grid, below mouse tracker -->
             <canvas id="physicsCanvas" aria-hidden="true"></canvas>
-            <!-- Layer 5: mouse tracker (covers everything, pointer-events only) -->
+            <!-- Gravity slider — visible only during chaos mode -->
+            <div class="gravity-slider-panel" id="gravitySliderPanel" aria-hidden="true">
+                <span class="gravity-label gravity-label-top">♃</span>
+                <input type="range" class="gravity-slider" id="gravitySlider"
+                       min="0" max="3" step="0.01" value="2"
+                       aria-label="Gravity strength" orient="vertical">
+                <span class="gravity-label gravity-label-bottom">○</span>
+                <span class="gravity-readout" id="gravityReadout">Earth</span>
+            </div>
+            <!-- Layer 5: mouse tracker -->
             <div class="hero-mouse" id="heroMouse" aria-hidden="true"></div>
         </section>
 
