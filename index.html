@@ -16,7 +16,7 @@
 </head>
 <body>
 
-    <!-- <header class="header">
+    <header class="header">
         <div class="container nav-content">
             <a href="#home" class="logo">ZAP</a>
             <nav class="navbar" aria-label="Main navigation">
@@ -29,44 +29,41 @@
             </nav>
             <button class="menu-toggle" aria-label="Toggle Navigation Menu" aria-expanded="false" aria-controls="navbar">&#9776;</button>
         </div>
-    </header> -->
+    </header>
 
     <main>
 
         <!-- HERO -->
         <section id="home" class="hero-section">
-            <!-- Layer 1: teal radial glow -->
             <canvas class="hero-glow" id="heroGlow" aria-hidden="true"></canvas>
-            <!-- Layer 2: ZAP background letters -->
             <div class="hero-zap" id="zapGrid" aria-hidden="true"></div>
-            <!-- Layer 3: hero text -->
             <div class="hero-text container" id="heroText">
-                <!-- H1 is split into letter spans by JS for the wave animation -->
                 <h1 id="heroH1" aria-label="Hello World, I'm ZAP!"></h1>
-                <h2><span id="typewriter"></span><span class="cursor" aria-hidden="true">|</span></h2>
+                <!-- h2 is split: typewriter span + cursor. DO NOT nest extra wrappers here. -->
+                <h2 id="heroH2"><span id="typewriter"></span><span class="cursor" aria-hidden="true">|</span></h2>
                 <p id="heroP">You found me! Welcome to all the various things I do... though there's not enough space to list it all here. But you can find out all about me here!</p>
             </div>
-            <!-- Layer 4: CTA buttons -->
             <div class="hero-cta" id="heroCta">
                 <a href="#portfolio" class="button button-primary" id="viewWorkBtn">View My Work</a>
                 <button class="button-chaos" id="chaosToggleBtn" aria-label="Toggle chaos mode">💥</button>
             </div>
-            <!-- Physics canvas -->
             <canvas id="physicsCanvas" aria-hidden="true"></canvas>
-            <!-- Gravity slider panel — visible only during chaos -->
+            <!-- Gravity slider — visible only during chaos -->
             <div class="gravity-slider-panel" id="gravitySliderPanel" aria-hidden="true">
                 <div class="gravity-track-wrap">
-                    <!-- Notch markers, top to bottom = high gravity to zero -->
-                    <div class="gravity-notch" data-index="3"><span class="gravity-notch-label">🪐</span></div>
-                    <div class="gravity-notch" data-index="2"><span class="gravity-notch-label">🌍</span></div>
-                    <div class="gravity-notch" data-index="1"><span class="gravity-notch-label">🌙</span></div>
-                    <div class="gravity-notch" data-index="0"><span class="gravity-notch-label">⚫</span></div>
+                    <!-- Circles rendered on the slider itself by CSS, labels float beside the track -->
+                    <!-- data-index: 3=Jupiter(top) 2=Earth 1=Moon 0=Zero(bottom) -->
+                    <div class="gravity-notch-labels">
+                        <span class="gravity-notch-label" data-index="3">J</span>
+                        <span class="gravity-notch-label" data-index="2">🌎</span>
+                        <span class="gravity-notch-label" data-index="1">🌙</span>
+                        <span class="gravity-notch-label" data-index="0">0</span>
+                    </div>
                     <input type="range" class="gravity-slider" id="gravitySlider"
                            min="0" max="3" step="0.01" value="2"
                            aria-label="Gravity strength" orient="vertical">
                 </div>
             </div>
-            <!-- Layer 5: mouse tracker -->
             <div class="hero-mouse" id="heroMouse" aria-hidden="true"></div>
         </section>
 

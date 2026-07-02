@@ -20,104 +20,32 @@
     --shadow-card-hover: 0 12px 30px rgba(29, 211, 176, 0.2);
 }
 
-
 /* ============================================ */
 /* 1. GLOBAL RESET & BASE                       */
 /* ============================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-
-body {
-    font-family: var(--font-body);
-    line-height: 1.6;
-    color: var(--dark-text);
-    background-color: var(--light-bg);
-}
-
-h1, h2, h3, h4 {
-    font-family: var(--font-heading);
-    color: var(--dark-text);
-    margin-bottom: 0.5rem;
-    line-height: 1.1;
-}
-
+body { font-family: var(--font-body); line-height: 1.6; color: var(--dark-text); background-color: var(--light-bg); }
+h1, h2, h3, h4 { font-family: var(--font-heading); color: var(--dark-text); margin-bottom: 0.5rem; line-height: 1.1; }
 img { max-width: 100%; display: block; }
-
-:focus-visible {
-    outline: 3px solid var(--primary-color);
-    outline-offset: 3px;
-    border-radius: 4px;
-}
-
+:focus-visible { outline: 3px solid var(--primary-color); outline-offset: 3px; border-radius: 4px; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 section { padding: 80px 0; }
 
-.section {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-}
+.section { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .section.visible { opacity: 1; transform: translateY(0); }
-
-@media (prefers-reduced-motion: reduce) {
-    .section { opacity: 1; transform: none; transition: none; }
-}
-
+@media (prefers-reduced-motion: reduce) { .section { opacity: 1; transform: none; transition: none; } }
 
 /* ============================================ */
 /* 2. HEADER & NAVIGATION                       */
 /* ============================================ */
-.header {
-    background-color: var(--white);
-    border-bottom: 1px solid #eee;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    box-shadow: var(--shadow-sm);
-}
-
-.nav-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-}
-
-.logo {
-    font-family: var(--font-heading);
-    font-size: 1.8rem;
-    text-decoration: none;
-    color: var(--primary-color);
-}
-
+.header { background-color: var(--white); border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow-sm); }
+.nav-content { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; }
+.logo { font-family: var(--font-heading); font-size: 1.8rem; text-decoration: none; color: var(--primary-color); }
 .navbar ul { display: flex; list-style: none; gap: 4px; }
-
-.navbar li a {
-    text-decoration: none;
-    color: var(--dark-text);
-    padding: 10px 15px;
-    font-weight: 600;
-    border-bottom: 2px solid transparent;
-    transition: color 0.3s, border-color 0.3s;
-    display: block;
-}
-
-.navbar li a:hover {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
-}
-
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--dark-text);
-    padding: 8px;
-    line-height: 1;
-}
-
+.navbar li a { text-decoration: none; color: var(--dark-text); padding: 10px 15px; font-weight: 600; border-bottom: 2px solid transparent; transition: color 0.3s, border-color 0.3s; display: block; }
+.navbar li a:hover { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+.menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark-text); padding: 8px; line-height: 1; }
 
 /* ============================================ */
 /* 3. HERO SECTION                              */
@@ -130,26 +58,11 @@ section { padding: 80px 0; }
     overflow: hidden;
 }
 
-/* Layer 1 — teal glow canvas */
-.hero-glow {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1;
-}
+/* Layer 1 */
+.hero-glow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 
-/* Layer 2 — ZAP background letters */
-.hero-zap {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-    user-select: none;
-    z-index: 2;
-}
-
+/* Layer 2 */
+.hero-zap { position: absolute; inset: 0; overflow: hidden; pointer-events: none; user-select: none; z-index: 2; }
 .hero-zap span {
     position: absolute;
     font-family: var(--font-heading);
@@ -164,24 +77,19 @@ section { padding: 80px 0; }
     white-space: nowrap;
 }
 
-/* Layer 3 — hero text block */
+/* Layer 3 */
 .hero-text {
     position: relative;
     z-index: 3;
     pointer-events: none;
-    text-shadow:
-        -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2,
-         1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2,
-        -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2,
-         1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2;
+    text-shadow: -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2, 1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2,
+                 -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2, 1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2;
 }
-
 .hero-text h1 { font-size: clamp(3rem, 6vw, 5rem); margin-bottom: 0.5rem; }
 .hero-text h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--secondary-color); margin-bottom: 1.5rem; }
 .hero-text p  { max-width: 700px; margin: 0 auto 30px auto; font-size: 1.2rem; }
 
-/* ---- H1 letter-wave animation ---- */
-/* Each letter span inside #heroH1 gets this animation with a staggered delay set by JS */
+/* ---- H1 letter-wave ---- */
 @keyframes letterBounceUp {
     0%   { opacity: 0; transform: translateY(0); }
     20%  { opacity: 1; transform: translateY(-18px); }
@@ -191,44 +99,34 @@ section { padding: 80px 0; }
     100% { opacity: 1; transform: translateY(0); }
 }
 
-/* The h1 itself is display:flex so letters sit inline */
-#heroH1 {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0;
-}
+#heroH1 { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; }
 
-/* Each letter span injected by JS */
 #heroH1 .h1-letter {
     display: inline-block;
     opacity: 0;
-    white-space: pre; /* preserve spaces */
+    white-space: pre;
 }
 
 #heroH1 .h1-letter.wave-animate {
     animation: letterBounceUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ---- Hero P fade + float up ---- */
+/* ---- Hero P fade float up ---- */
 @keyframes heroFadeFloatUp {
     0%   { opacity: 0; transform: translateY(28px); }
     100% { opacity: 1; transform: translateY(0); }
 }
 
-#heroP {
-    opacity: 0;
-    animation: heroFadeFloatUp 0.7s ease-out 0.7s forwards;
-}
+#heroP { opacity: 0; animation: heroFadeFloatUp 0.7s ease-out 0.7s forwards; }
 
-/* Hide original DOM text when chaos is active */
+/* Chaos active: hide original DOM text */
 .hero-section.chaos-active .hero-text,
-.hero-section.chaos-active .hero-cta #viewWorkBtn {
+.hero-section.chaos-active #viewWorkBtn {
     visibility: hidden;
     pointer-events: none;
 }
 
-/* Physics canvas */
+/* Physics canvas — layer 4 */
 #physicsCanvas {
     position: absolute;
     inset: 0;
@@ -239,11 +137,7 @@ section { padding: 80px 0; }
     opacity: 0;
     transition: opacity 0.3s;
 }
-
-.hero-section.chaos-active #physicsCanvas {
-    pointer-events: all;
-    opacity: 1;
-}
+.hero-section.chaos-active #physicsCanvas { pointer-events: all; opacity: 1; }
 
 /* Layer 4 — CTA row */
 .hero-cta {
@@ -256,10 +150,9 @@ section { padding: 80px 0; }
     justify-content: center;
     gap: 14px;
 }
-
 .hero-cta .button { pointer-events: all; }
 
-/* ---- Chaos button — circular, emoji only ---- */
+/* ---- Chaos button ---- */
 .button-chaos {
     pointer-events: all;
     width: 52px;
@@ -275,18 +168,13 @@ section { padding: 80px 0; }
     justify-content: center;
     transition: background 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 4px 14px rgba(255, 186, 73, 0.4);
-    /* Positional transition for chaos-active slide to bottom-right */
-    position: relative;
 }
-
 .button-chaos:hover {
     background: #ffca6e;
     border-color: #ffca6e;
     transform: scale(1.12);
     box-shadow: 0 6px 22px rgba(255, 186, 73, 0.7);
 }
-
-/* In chaos mode: move button to bottom-right, turn teal */
 .hero-section.chaos-active .button-chaos {
     position: absolute;
     right: 32px;
@@ -296,7 +184,6 @@ section { padding: 80px 0; }
     border-color: var(--primary-color);
     box-shadow: 0 4px 18px rgba(29, 211, 176, 0.5);
 }
-
 .hero-section.chaos-active .button-chaos:hover {
     background: #25e8c2;
     border-color: #25e8c2;
@@ -311,142 +198,108 @@ section { padding: 80px 0; }
     top: 50%;
     transform: translateY(-50%);
     z-index: 8;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s ease;
 }
+.hero-section.chaos-active .gravity-slider-panel { opacity: 1; pointer-events: all; }
 
-.hero-section.chaos-active .gravity-slider-panel {
-    opacity: 1;
-    pointer-events: all;
-}
-
-/* Track wrap: holds the slider and the 4 notch labels side by side */
 .gravity-track-wrap {
     position: relative;
     display: flex;
     flex-direction: row;
-    align-items: stretch;
-    gap: 0;
+    align-items: center;
+    gap: 10px;
     height: 200px;
 }
 
-/* The range input — vertical */
+/* ---- Vertical range slider ---- */
 .gravity-slider {
     -webkit-appearance: slider-vertical;
     appearance: slider-vertical;
     writing-mode: vertical-lr;
     direction: rtl;
-    width: 28px;
+    width: 32px;
     height: 200px;
     cursor: pointer;
-    accent-color: var(--primary-color);
     background: transparent;
-    flex-shrink: 0;
+    /* Custom track and thumb via accent-color */
+    accent-color: var(--primary-color);
 }
 
-/* Notch column sits to the right of the slider track */
-.gravity-notch {
+/* Slider thumb styled as a circle with the gravity symbol inside.
+   We use a custom approach: the native thumb is hidden and we overlay
+   four absolutely-positioned circular "notch" markers on a pseudo-track. */
+
+/* Custom track line */
+.gravity-slider-track {
     position: absolute;
-    left: 36px; /* to the right of the 28px slider */
+    left: 14px; /* centre of the 32px slider column */
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: rgba(41,41,41,0.15);
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+/* ---- Notch label column (right of slider) ---- */
+.gravity-notch-labels {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 200px;
+    pointer-events: none;
+}
+
+/* Each label is a circle with a symbol inside */
+.gravity-notch-label {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(41,41,41,0.2);
+    background: rgba(255,252,242,0.85);
     display: flex;
     align-items: center;
-    height: 0; /* positioned by % top via data-index */
-}
-
-/* Space the 4 notches evenly: top (Jupiter) = 0%, bottom (zero) = 100% */
-.gravity-notch[data-index="3"] { top: 0%;         transform: translateY(-50%); }
-.gravity-notch[data-index="2"] { top: 33.33%;     transform: translateY(-50%); }
-.gravity-notch[data-index="1"] { top: 66.67%;     transform: translateY(-50%); }
-.gravity-notch[data-index="0"] { top: 100%;       transform: translateY(-50%); }
-
-.gravity-notch::before {
-    content: '';
-    display: block;
-    width: 6px;
-    height: 1.5px;
-    background: rgba(41,41,41,0.3);
-    margin-right: 4px;
-    flex-shrink: 0;
-}
-
-.gravity-notch-label {
-    font-size: 1rem;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: var(--font-body);
+    color: var(--dark-text);
     line-height: 1;
     user-select: none;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+/* Highlight the active notch — driven by JS adding .is-active */
+.gravity-notch-label.is-active {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: var(--light-text);
 }
 
 /* Layer 5 — mouse tracker */
-.hero-mouse {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    cursor: default;
-}
-
-/* In chaos mode drop tracker below physics canvas */
-.hero-section.chaos-active .hero-mouse {
-    z-index: 3;
-}
-
+.hero-mouse { position: absolute; inset: 0; z-index: 5; cursor: default; }
+.hero-section.chaos-active .hero-mouse { z-index: 3; }
 
 /* ============================================ */
 /* 4. OTHER SECTIONS                            */
 /* ============================================ */
 .about-me { background-color: var(--white); }
-
-.section h3 {
-    font-size: 2.5rem;
-    margin-bottom: 30px;
-    text-align: center;
-    color: var(--secondary-color);
-}
-
+.section h3 { font-size: 2.5rem; margin-bottom: 30px; text-align: center; color: var(--secondary-color); }
 .portfolio-showcase { background-color: #f8f5f1; }
-
-.project-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 28px;
-    margin-top: 10px;
-}
-
+.project-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 10px; }
 .contact-form-section { background-color: var(--light-bg); }
 .contact-intro { text-align: center; margin-bottom: 40px; }
-
 
 /* ============================================ */
 /* 5. FOOTER                                    */
 /* ============================================ */
-.footer {
-    background-color: #292929;
-    color: var(--light-text);
-    padding: 40px 0;
-    font-size: 0.9rem;
-}
-
-.footer-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-}
-
+.footer { background-color: #292929; color: var(--light-text); padding: 40px 0; font-size: 0.9rem; }
+.footer-content { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; }
 .footer p { color: var(--light-text); }
-
-.social-links a {
-    color: var(--light-text);
-    margin-left: 20px;
-    font-size: 1.5rem;
-    transition: color 0.3s;
-}
-
+.social-links a { color: var(--light-text); margin-left: 20px; font-size: 1.5rem; transition: color 0.3s; }
 .social-links a:hover { color: var(--primary-color); }
-
 
 /* ============================================ */
 /* 6. MEDIA QUERIES                             */
@@ -459,38 +312,14 @@ section { padding: 80px 0; }
 
 @media (max-width: 768px) {
     .menu-toggle { display: block; }
-
-    .navbar {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background-color: var(--white);
-        border-top: 1px solid #eee;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.08);
-        padding: 12px 0;
-    }
-
+    .navbar { display: none; position: absolute; top: 100%; left: 0; right: 0; background-color: var(--white); border-top: 1px solid #eee; box-shadow: 0 8px 16px rgba(0,0,0,0.08); padding: 12px 0; }
     .navbar.is-active { display: block; }
     .navbar ul { flex-direction: column; gap: 0; }
-
-    .navbar li a {
-        padding: 14px 20px;
-        border-bottom: none;
-        border-left: 3px solid transparent;
-    }
-
-    .navbar li a:hover {
-        border-bottom-color: transparent;
-        border-left-color: var(--primary-color);
-        background-color: #f5f5f5;
-    }
-
+    .navbar li a { padding: 14px 20px; border-bottom: none; border-left: 3px solid transparent; }
+    .navbar li a:hover { border-bottom-color: transparent; border-left-color: var(--primary-color); background-color: #f5f5f5; }
     .project-grid { grid-template-columns: 1fr; }
     .footer-content { flex-direction: column; gap: 16px; text-align: center; }
     .social-links a { margin: 0 10px; }
-
     .gravity-slider-panel { left: 8px; }
 }
 
