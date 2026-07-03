@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3b. H1 LETTER-WAVE ANIMATION
     // ----------------------------------------
     const heroH1El = document.getElementById('heroH1');
-    const H1_TEXT  = "Hello World, I'm ZAP!";
+    const H1_TEXT  = "Hello World, I'm Zayan!";
     const H1_BREAK_AFTER_TEXT = "Hello World,";
 
     function buildH1LetterSpans() {

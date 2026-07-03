@@ -82,10 +82,9 @@ section { padding: 80px 0; }
     position: relative;
     z-index: 3;
     pointer-events: none;
-    text-shadow: -1px 0 0.3em #FFFCF2, 0 1px 0.3em #FFFCF2, 1px 0 0.3em #FFFCF2, 0 -1px 0.3em #FFFCF2,
-                 -1px 0 0.3em #FFFCF2, 0 1px 0.3em #FFFCF2, 1px 0 0.3em #FFFCF2, 0 -1px 0.3em #FFFCF2;
+    text-shadow: -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2, 1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2,
+                 -1px 0 10px #FFFCF2, 0 1px 10px #FFFCF2, 1px 0 10px #FFFCF2, 0 -1px 10px #FFFCF2;
 }
-
 .hero-text h1 { font-size: clamp(3rem, 6vw, 5rem); margin-bottom: 0.5rem; }
 .hero-text h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--secondary-color); margin-bottom: 1.5rem; }
 .hero-text p  { max-width: 700px; margin: 0 auto 30px auto; font-size: 1.2rem; }
@@ -185,7 +184,6 @@ section { padding: 80px 0; }
     border-color: var(--primary-color);
     box-shadow: 0 4px 18px rgba(29, 211, 176, 0.5);
 }
-
 .hero-section.chaos-active .button-chaos:hover {
     background: #25e8c2;
     border-color: #25e8c2;
@@ -271,8 +269,6 @@ section { padding: 80px 0; }
     line-height: 1;
     user-select: none;
     transition: border-color 0.2s, background 0.2s, color 0.2s;
-    cursor: pointer;
-    pointer-events: all; /* allow clicking on the labels to set gravity */
 }
 
 /* Highlight the active notch — driven by JS adding .is-active */
@@ -291,6 +287,28 @@ section { padding: 80px 0; }
 /* ============================================ */
 .about-me { background-color: var(--white); }
 .section h3 { font-size: 2.5rem; margin-bottom: 30px; text-align: center; color: var(--secondary-color); }
+
+/* ---- About: Text Version / Game Version choice cards ---- */
+.about-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    margin-top: 40px;
+}
+.about-choice-card h4 {
+    color: var(--secondary-color);
+    font-size: 1.5rem;
+    margin: 0;
+}
+.about-choice-card p {
+    flex: 1;
+    margin: 0;
+}
+.about-choice-card .button {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
 .portfolio-showcase { background-color: #f8f5f1; }
 .project-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 10px; }
 .contact-form-section { background-color: var(--light-bg); }
@@ -312,6 +330,7 @@ section { padding: 80px 0; }
     section { padding: 60px 0; }
     .hero-section { padding: 80px 0; }
     .project-grid { grid-template-columns: repeat(2, 1fr); }
+    .about-choice-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
@@ -332,11 +351,6 @@ section { padding: 80px 0; }
     .hero-text h2 { font-size: 1.4rem; }
     .hero-text p  { font-size: 1rem; }
     .section h3   { font-size: 2rem; }
-
-    #heroH1 .forced-line-break {
-        flex-basis: 100%;
-        height: 0;
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ZAP – Personal portfolio showcasing web development projects and professional work.">
+    <meta name="description" content="Zayan Pannun's personal portfolio showcasing web development projects and professional work.">
     <title>ZAP | Personal Portfolio</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +24,7 @@
                     <li role="none"><a href="#home" role="menuitem">Home</a></li>
                     <li role="none"><a href="#about" role="menuitem">About</a></li>
                     <li role="none"><a href="#portfolio" role="menuitem">Portfolio</a></li>
-                    <li role="none"><a href="#contact" role="menuitem">Contact</a></li>
+                    <li role="none"><a href="#footer" role="menuitem">Contact</a></li>
                 </ul>
             </nav>
             <button class="menu-toggle" aria-label="Toggle Navigation Menu" aria-expanded="false" aria-controls="navbar">&#9776;</button>
@@ -38,7 +38,7 @@
             <canvas class="hero-glow" id="heroGlow" aria-hidden="true"></canvas>
             <div class="hero-zap" id="zapGrid" aria-hidden="true"></div>
             <div class="hero-text container" id="heroText">
-                <h1 id="heroH1" aria-label="Hello World, I'm ZAP!"></h1>
+                <h1 id="heroH1" aria-label="Hello World, I'm Zayan!"></h1>
                 <!-- h2 is split: typewriter span + cursor. DO NOT nest extra wrappers here. -->
                 <h2 id="heroH2"><span id="typewriter"></span><span class="cursor" aria-hidden="true">|</span></h2>
                 <p id="heroP">You found me! Welcome to all the various things I do... though there's not enough space to list it all here. But you can find out all about me here!</p>
@@ -54,10 +54,10 @@
                     <!-- Circles rendered on the slider itself by CSS, labels float beside the track -->
                     <!-- data-index: 3=Jupiter(top) 2=Earth 1=Moon 0=Zero(bottom) -->
                     <div class="gravity-notch-labels">
-                        <span class="gravity-notch-label" data-index="3" data-gravity-value="3">J</span>
-                        <span class="gravity-notch-label" data-index="2" data-gravity-value="2">🌎</span>
-                        <span class="gravity-notch-label" data-index="1" data-gravity-value="1">🌙</span>
-                        <span class="gravity-notch-label" data-index="0" data-gravity-value="0">0</span>
+                        <span class="gravity-notch-label" data-index="3">J</span>
+                        <span class="gravity-notch-label" data-index="2">🌎</span>
+                        <span class="gravity-notch-label" data-index="1">🌙</span>
+                        <span class="gravity-notch-label" data-index="0">0</span>
                     </div>
                     <input type="range" class="gravity-slider" id="gravitySlider"
                            min="0" max="3" step="0.01" value="2"
@@ -71,7 +71,19 @@
         <section id="about" class="section about-me">
             <div class="container">
                 <h3>About Me</h3>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                <div class="about-choice-grid">
+                    <article class="card about-choice-card">
+                        <h4>Text Version</h4>
+                        <p>Prefer to read? Get the full story of who I am, what I do, and how I got here in plain, straightforward text.</p>
+                        <a href="#" class="button button-secondary">Read My Story</a>
+                    </article>
+                    <article class="card about-choice-card">
+                        <h4>Game Version</h4>
+                        <p>Prefer to play? Explore an interactive mini-game version of my story instead — same info, way more fun.</p>
+                        <a href="#" class="button button-secondary">Play My Story</a>
+                    </article>
+                </div>
             </div>
         </section>
 
@@ -81,18 +93,18 @@
                 <h3>Featured Projects</h3>
                 <div class="project-grid">
                     <article class="card project-item">
-                        <h4>Stuff 1</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                        <h4>E-commerce Platform Redesign</h4>
+                        <p>Rebuilt a legacy e-commerce site, improving conversion rates by focusing on optimised UX flows and modern component architecture.</p>
                         <a href="#" target="_blank" rel="noopener noreferrer" class="button button-secondary">View Project</a>
                     </article>
                     <article class="card project-item">
-                        <h4>Stuff 2</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.[</p>
+                        <h4>Internal Dashboard Tool</h4>
+                        <p>Developed a data visualisation dashboard for internal metrics, allowing management to monitor KPIs in real-time with minimal latency.</p>
                         <a href="#" target="_blank" rel="noopener noreferrer" class="button button-secondary">View Project</a>
                     </article>
                     <article class="card project-item">
-                        <h4>Stuff 3</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                        <h4>API Integration Service</h4>
+                        <p>Created a microservice layer to connect disparate third-party APIs (e.g., payment, mapping), ensuring scalable data exchange.</p>
                         <a href="#" target="_blank" rel="noopener noreferrer" class="button button-secondary">View Project</a>
                     </article>
                 </div>
@@ -116,12 +128,12 @@
 
     </main>
 
-    <footer class="footer">
+    <footer id = "footer" class="footer">
         <div class="container footer-content">
             <p>&copy; 2026 ZAP. All Rights Reserved.</p>
             <div class="social-links">
-                <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
-                <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://www.linkedin.com/in/zapannun" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/z-a-p-0" aria-label="GitHub"><i class="fab fa-github"></i></a>
             </div>
         </div>
     </footer>
