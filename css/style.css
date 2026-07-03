@@ -178,12 +178,13 @@ section { padding: 80px 0; }
 .hero-section.chaos-active .button-chaos {
     position: absolute;
     right: 32px;
-    bottom: 32px;
+    top: -200%;
     z-index: 8;
     background: var(--primary-color);
     border-color: var(--primary-color);
     box-shadow: 0 4px 18px rgba(29, 211, 176, 0.5);
 }
+
 .hero-section.chaos-active .button-chaos:hover {
     background: #25e8c2;
     border-color: #25e8c2;
@@ -269,6 +270,8 @@ section { padding: 80px 0; }
     line-height: 1;
     user-select: none;
     transition: border-color 0.2s, background 0.2s, color 0.2s;
+    cursor: pointer;
+    pointer-events: all; /* allow clicking on the labels to set gravity */
 }
 
 /* Highlight the active notch — driven by JS adding .is-active */

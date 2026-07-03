@@ -532,7 +532,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ---- Gravity slider & notch highlights ----
+    function setGravityToPresetValue(presetValue) {
+        currentGravityY = getGravityFromSliderValue(presetValue);
+        if (gravitySliderEl) gravitySliderEl.value = presetValue;
+        updateGravityNotchHighlight(presetValue);
+        if (physicsEngine) physicsEngine.gravity.y = currentGravityY;
+    }
 
+    gravityNotchEls.forEach(notchEl => {
+        notchEl.addEventListener('click', () => {
+            const clickedGravityValue = parseFloat(notchEl.dataset.gravityValue);
+            setGravityToPresetValue(clickedGravityValue);
+        });
+    });
+    
     function updateGravityNotchHighlight(sliderVal) {
         const nearest = Math.round(sliderVal);
         gravityNotchEls.forEach(el => {
@@ -726,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
             friction:       0,
             frictionStatic: 0,
             frictionAir:    0,   // no air resistance — velocity constant except gravity
-            density:        0.002
+            density:        0.1
         });
     }
 
