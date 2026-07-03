@@ -153,14 +153,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------
     const heroH1El = document.getElementById('heroH1');
     const H1_TEXT  = "Hello World, I'm ZAP!";
+    const H1_BREAK_AFTER_TEXT = "Hello World,";
 
     function buildH1LetterSpans() {
         heroH1El.innerHTML = '';
+        let charactersTypedSoFar = '';
         H1_TEXT.split('').forEach(char => {
-            const span = document.createElement('span');
-            span.classList.add('h1-letter');
-            span.textContent = char === ' ' ? '\u00A0' : char;
-            heroH1El.appendChild(span);
+            const letterSpan = document.createElement('span');
+            letterSpan.classList.add('h1-letter');
+            letterSpan.textContent = char === ' ' ? '\u00A0' : char;
+            heroH1El.appendChild(letterSpan);
+
+            charactersTypedSoFar += char;
+            if (charactersTypedSoFar === H1_BREAK_AFTER_TEXT) {
+                const lineBreakSpan = document.createElement('span');
+                lineBreakSpan.classList.add('forced-line-break');
+                heroH1El.appendChild(lineBreakSpan);
+            }
         });
     }
 
