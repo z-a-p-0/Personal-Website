@@ -576,8 +576,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const origHTML   = domEl.innerHTML;
         const text       = domEl.textContent;
 
+        // Space spans must NOT force white-space:pre — that disables the
+        // browser's ability to break a line at that space, collapsing the
+        // whole paragraph onto one line and breaking wrap-based positioning.
+        // Leaving white-space at its inherited 'normal' value lets each space
+        // remain a valid wrap point, so multi-line paragraphs harvest with
+        // correct per-line character positions.
         domEl.innerHTML = text.split('').map(ch =>
-            ch === ' ' ? `<span style="white-space:pre"> </span>` : `<span>${ch}</span>`
+            ch === ' ' ? `<span> </span>` : `<span>${ch}</span>`
         ).join('');
 
         domEl.querySelectorAll('span').forEach((span, i) => {
@@ -588,8 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     char,
                     centerX: sr.left - heroRect.left + sr.width  / 2,
                     centerY: sr.top  - heroRect.top  + sr.height / 2,
-                    width:   Math.max(sr.width,  4),
-                    height:  Math.max(sr.height, 4),
+                    width:   sr.width,
+                    height:  sr.height,
                     fontSize, fontFamily, fontStyle, fontWeight, color
                 });
             }
@@ -618,8 +624,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     char,
                     centerX: sr.left - heroRect.left + sr.width  / 2,
                     centerY: sr.top  - heroRect.top  + sr.height / 2,
-                    width:   Math.max(sr.width,  4),
-                    height:  Math.max(sr.height, 4),
+                    width:   sr.width,
+                    height:  sr.height,
                     fontSize, fontFamily, fontStyle, fontWeight, color
                 });
             }
@@ -678,8 +684,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     char,
                     centerX: startX + cumulativeWidth + charWidth / 2,
                     centerY,
-                    width:   Math.max(charWidth, 4),
-                    height:  Math.max(lineHeight, 4),
+                    width:   charWidth,
+                    height:  lineHeight,
                     fontSize, fontFamily, fontStyle, fontWeight, color
                 });
             }
@@ -712,7 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // friction: 0      → no surface friction
     // frictionStatic: 0
     // inertia: Infinity → no angular change on collision (keeps rotation from collisions)
-    //   Actually we want some rotation so we'll keep inertia default but set frictionAir=0
+    // Actually we want some rotation so we'll keep inertia default but set frictionAir=0
 
     function makeLetterBody(cx, cy, w, h) {
         return Bodies.rectangle(cx, cy, w * 0.85, h * 0.85, {
@@ -756,7 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(typewriterTimeoutId);
 
         heroSectionEl.classList.add('chaos-active');
-        chaosToggleButton.textContent = '✕';
+        chaosToggleButton.textContent = 'X';
 
         // Reset gravity to Earth
         currentGravityY = GRAVITY_PRESETS[2].matterY;
