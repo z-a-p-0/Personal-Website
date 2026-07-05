@@ -57,6 +57,7 @@
     color: var(--primary-color);
     border-color: var(--primary-color);
     padding: 10px 25px;
+    transition: background-color 0.3s, border-color 0.3s, transform 0.3s;
 }
 
 .button-secondary:hover{

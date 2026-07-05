@@ -1,0 +1,57 @@
+/* ============================================ */
+/* ABOUT PAGE — TEXT VERSION                    */
+/* ============================================ */
+
+.about-text-section {
+    text-align: center;
+}
+
+.about-text-title {
+    font-size: clamp(2.4rem, 5vw, 3.5rem);
+    color: var(--dark-text);
+}
+
+.about-text-intro {
+    color: var(--dark-text);
+    opacity: 0.7;
+    margin-bottom: 50px;
+}
+
+.about-circle-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+}
+
+.about-circle {
+    position: relative;
+    width: clamp(170px, 20vw, 240px);
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    background-color: var(--white);
+    border: 3px solid var(--primary-color);
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    overflow: hidden;
+    transition: box-shadow 0.3s, border-color 0.3s, transform 0.3s;
+}
+
+.about-circle:hover {
+    border-color: var(--secondary-color);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-4px);
+}
+
+.about-circle-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+@media (max-width: 480px) {
+    .about-circle-grid { gap: 24px; }
+}
