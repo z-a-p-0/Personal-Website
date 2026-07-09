@@ -1,4 +1,57 @@
 /* ============================================ */
+/* PAGE THEME — active circle's colour spreads across   */
+/* the whole about.html page (not header/footer bg;     */
+/* logo + nav-hover accents are the one exception).      */
+/* Vars set on :root by about.js, fall back to the site's */
+/* normal palette when no circle is active.              */
+/* ============================================ */
+body {
+    background-color: var(--circle-bg, var(--light-bg));
+    transition: background-color 0.6s ease;
+}
+
+.logo {
+    color: var(--circle-accent, var(--primary-color));
+    transition: color 0.3s;
+}
+
+.navbar li a:hover {
+    color: var(--circle-accent, var(--primary-color));
+    border-bottom-color: var(--circle-accent, var(--primary-color));
+}
+
+.portfolio-showcase {
+    background-color: var(--circle-bg, #f8f5f1);
+    transition: background-color 0.6s ease;
+}
+
+.section h3,
+.project-item h4 {
+    color: var(--circle-accent, var(--secondary-color));
+    transition: color 0.3s;
+}
+
+.card {
+    border-color: var(--circle-accent, var(--border-color));
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+
+.button-primary {
+    background-color: var(--circle-accent, var(--primary-color));
+    border-color: var(--circle-accent, var(--primary-color));
+}
+
+.button-secondary {
+    color: var(--circle-accent, var(--primary-color));
+    border-color: var(--circle-accent, var(--primary-color));
+}
+
+.button-secondary:hover {
+    background-color: var(--circle-accent, var(--primary-color));
+}
+
+
+/* ============================================ */
 /* ABOUT PAGE — TEXT VERSION                    */
 /* ============================================ */
 
@@ -22,31 +75,35 @@
     z-index: 0;
 }
 
-.about-circle-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 40px;
+.about-carousel {
+    position: relative;
+    height: clamp(180px, 20vw, 250px);
+    overflow: hidden;
+    /* Full-bleed: break out of .container so the carousel spans the viewport edge to edge */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
 }
 
 .about-circle {
-    position: relative;
-    width: clamp(170px, 20vw, 240px);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: clamp(150px, 16vw, 210px);
     aspect-ratio: 1 / 1;
     border-radius: 50%;
     background-color: var(--white);
-    border: 3px solid var(--primary-color);
+    border: 3px solid var(--circle-accent, var(--primary-color));
     box-shadow: var(--shadow-card);
     cursor: pointer;
     overflow: hidden;
-    transition: box-shadow 0.3s, border-color 0.3s, transform 0.3s;
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+    transition: box-shadow 0.3s, border-color 0.3s;
 }
 
 .about-circle:hover {
-    border-color: var(--secondary-color);
     box-shadow: var(--shadow-card-hover);
-    transform: translateY(-4px);
 }
 
 .about-circle-canvas {
@@ -73,6 +130,11 @@
 }
 
 @media (max-width: 480px) {
-    .about-circle-grid { gap: 24px; }
+    .about-carousel { height: clamp(160px, 45vw, 210px); }
+    .about-circle { width: clamp(130px, 38vw, 180px); }
     .about-text-output { min-height: 380px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .about-circle { transition: box-shadow 0.2s, border-color 0.2s; }
 }
