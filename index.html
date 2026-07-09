@@ -45,23 +45,84 @@
             </div>
             <div class="hero-cta" id="heroCta">
                 <a href="#portfolio" class="button button-primary" id="viewWorkBtn">View My Work</a>
-                <button class="button-chaos" id="chaosToggleBtn" aria-label="Toggle chaos mode">💥</button>
+                <div class="hero-chaos-controls">
+                    <button class="button-chaos" id="chaosToggleBtn" aria-label="Toggle chaos mode">💥</button>
+                    <button class="button-chaos button-debug" id="debugToggleBtn" aria-label="Toggle physics debug panel" aria-expanded="false">
+                        <i class="fas fa-cog" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
             <canvas id="physicsCanvas" aria-hidden="true"></canvas>
             <!-- Gravity slider — visible only during chaos -->
             <div class="gravity-slider-panel" id="gravitySliderPanel" aria-hidden="true">
                 <div class="gravity-track-wrap">
                     <!-- Circles rendered on the slider itself by CSS, labels float beside the track -->
-                    <!-- data-index: 3=Jupiter(top) 2=Earth 1=Moon 0=Zero(bottom) -->
+                    <!-- data-index: 3=Jupiter(top) 2=Earth 1=Moon 0=Zero(bottom). Same scale as
+                         #gravitySlider (min 0, max 3), so a notch's data-index IS the slider value. -->
                     <div class="gravity-notch-labels">
-                        <span class="gravity-notch-label" data-index="3">J</span>
-                        <span class="gravity-notch-label" data-index="2">🌎</span>
-                        <span class="gravity-notch-label" data-index="1">🌙</span>
-                        <span class="gravity-notch-label" data-index="0">0</span>
+                        <button class="gravity-notch-label" data-index="3" aria-label="Set gravity to Jupiter">J</button>
+                        <button class="gravity-notch-label" data-index="2" aria-label="Set gravity to Earth">🌎</button>
+                        <button class="gravity-notch-label" data-index="1" aria-label="Set gravity to Moon">🌙</button>
+                        <button class="gravity-notch-label" data-index="0" aria-label="Set gravity to zero">0</button>
                     </div>
                     <input type="range" class="gravity-slider" id="gravitySlider"
                            min="0" max="3" step="0.01" value="2"
                            aria-label="Gravity strength" orient="vertical">
+                </div>
+            </div>
+            <!-- Debug panel — visible only when debug toggle is opened during chaos -->
+            <div class="debug-panel" id="debugPanel" aria-hidden="true">
+                <div class="debug-panel-header">
+                    <h4 class="debug-panel-title"><i class="fas fa-cog" aria-hidden="true"></i> Physics Debug</h4>
+                    <button class="debug-panel-close" id="debugCloseBtn" aria-label="Close debug panel">
+                        <i class="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="debug-slider-row">
+                    <span class="debug-slider-name">Gravity</span>
+                    <div class="debug-slider-control">
+                        <output class="debug-slider-value" id="debugGravityValue" for="debugGravity">2.00</output>
+                        <input type="range" class="debug-slider" id="debugGravity" min="0" max="3" step="0.01" value="2" aria-label="Gravity strength">
+                    </div>
+                </div>
+                <div class="debug-slider-row">
+                    <span class="debug-slider-name">Air Resistance</span>
+                    <div class="debug-slider-control">
+                        <output class="debug-slider-value" id="debugAirResistanceValue" for="debugAirResistance">0.000</output>
+                        <input type="range" class="debug-slider" id="debugAirResistance" min="0" max="0.05" step="0.001" value="0" aria-label="Air resistance">
+                    </div>
+                </div>
+                <div class="debug-slider-row">
+                    <span class="debug-slider-name">Surface Friction</span>
+                    <div class="debug-slider-control">
+                        <output class="debug-slider-value" id="debugFrictionValue" for="debugFriction">0.00</output>
+                        <input type="range" class="debug-slider" id="debugFriction" min="0" max="1" step="0.01" value="0" aria-label="Surface friction">
+                    </div>
+                </div>
+                <div class="debug-slider-row">
+                    <span class="debug-slider-name">Bounciness</span>
+                    <div class="debug-slider-control">
+                        <output class="debug-slider-value" id="debugRestitutionValue" for="debugRestitution">0.60</output>
+                        <input type="range" class="debug-slider" id="debugRestitution" min="0" max="1" step="0.01" value="0.6" aria-label="Bounciness">
+                    </div>
+                </div>
+                <div class="debug-slider-row">
+                    <span class="debug-slider-name">Angular Friction</span>
+                    <div class="debug-slider-control">
+                        <output class="debug-slider-value" id="debugAngularFrictionValue" for="debugAngularFriction">0.008</output>
+                        <input type="range" class="debug-slider" id="debugAngularFriction" min="0" max="0.05" step="0.001" value="0.008" aria-label="Angular friction">
+                    </div>
+                </div>
+                <div class="debug-slider-row">
+                    <span class="debug-slider-name">Angular Friction (Held)</span>
+                    <div class="debug-slider-control">
+                        <output class="debug-slider-value" id="debugAngularFrictionDragValue" for="debugAngularFrictionDrag">0.040</output>
+                        <input type="range" class="debug-slider" id="debugAngularFrictionDrag" min="0" max="0.2" step="0.005" value="0.04" aria-label="Angular friction while held">
+                    </div>
+                </div>
+                <div class="debug-panel-actions">
+                    <button class="debug-panel-btn" id="debugResetPhysicsBtn">Reset Physics</button>
+                    <button class="debug-panel-btn" id="debugResetLettersBtn">Reset Letters</button>
                 </div>
             </div>
             <div class="hero-mouse" id="heroMouse" aria-hidden="true"></div>
@@ -72,17 +133,27 @@
             <div class="container">
                 <h3>About Me</h3>
                 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-                <div class="about-choice-grid">
-                    <article class="card about-choice-card">
-                        <h4>Text Version</h4>
-                        <p>Prefer to read? Get the full story of who I am, what I do, and how I got here in plain, straightforward text.</p>
-                        <a href="about.html" class="button button-secondary">Read My Story</a>
-                    </article>
-                    <article class="card about-choice-card">
-                        <h4>Game Version</h4>
-                        <p>Prefer to play? Explore an interactive mini-game version of my story instead — same info, way more fun.</p>
-                        <a href="#" class="button button-secondary">Play My Story</a>
-                    </article>
+
+                <div class="about-conveyor" id="aboutConveyor">
+                    <a href="about.html?circle=education" class="about-conveyor-circle" data-key="education" data-heading="Education" data-color="#FFBA49" aria-label="Education">
+                        <canvas class="about-conveyor-canvas"></canvas>
+                    </a>
+                    <a href="about.html?circle=coding" class="about-conveyor-circle" data-key="coding" data-heading="Coding" data-color="#9BD31D" aria-label="Coding">
+                        <canvas class="about-conveyor-canvas"></canvas>
+                    </a>
+                    <a href="about.html?circle=whoami" class="about-conveyor-circle" data-key="whoami" data-heading="Who am I?" data-color="#1DD3B0" aria-label="Who am I?">
+                        <canvas class="about-conveyor-canvas"></canvas>
+                    </a>
+                    <a href="about.html?circle=gamedev" class="about-conveyor-circle" data-key="gamedev" data-heading="Game Dev" data-color="#FF6F91" aria-label="Game Dev">
+                        <canvas class="about-conveyor-canvas"></canvas>
+                    </a>
+                    <a href="about.html?circle=linkedin" class="about-conveyor-circle" data-key="linkedin" data-heading="LinkedIn" data-color="#0A66C2" aria-label="LinkedIn">
+                        <canvas class="about-conveyor-canvas"></canvas>
+                    </a>
+                </div>
+
+                <div class="about-cta">
+                    <a href="about.html" class="button button-primary">See More About Me</a>
                 </div>
             </div>
         </section>

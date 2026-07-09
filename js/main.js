@@ -508,11 +508,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewWorkBtnEl     = document.getElementById('viewWorkBtn');
     const heroSectionEl     = document.querySelector('.hero-section');
     const gravitySliderEl   = document.getElementById('gravitySlider');
-    const gravityNotchEls   = document.querySelectorAll('.gravity-notch-label'); // 4 circle labels
+    const gravityNotchEls   = document.querySelectorAll('.gravity-notch-label'); // 4 circle buttons
+    const debugToggleButton = document.getElementById('debugToggleBtn');
+    const debugPanelEl      = document.getElementById('debugPanel');
 
     if (!chaosToggleButton || !physicsCanvas || !window.Matter) return;
 
-    const { Engine, Runner, Bodies, Body, Composite, Mouse, MouseConstraint, World } = Matter;
+    const { Engine, Runner, Bodies, Body, Composite, Mouse, MouseConstraint, World, Events } = Matter;
 
     // Gravity presets — actual acceleration m/s² values (scaled for Matter.js feel)
     // Slider 0→3 maps index 0→3: zero | moon | earth | jupiter
@@ -538,23 +540,41 @@ document.addEventListener('DOMContentLoaded', () => {
     let physicsCtx         = null;
     let wallBodies         = [];
     let currentGravityY    = GRAVITY_PRESETS[2].matterY; // earth default
+    let draggedBody        = null; // body currently held by the mouse constraint, if any
+
+    const DEFAULT_GRAVITY_SLIDER_VALUE = 2; // Earth
+
+    // Live-tunable physics knobs, exposed via the debug panel. Read fresh into
+    // new letter bodies at launch and pushed onto existing bodies on slider input.
+    const DEFAULT_PHYSICS_PARAMS = Object.freeze({
+        frictionAir:         0,     // linear air resistance
+        friction:            0,     // surface friction on collision
+        restitution:         0.6,   // bounciness
+        angularFriction:     0.008, // per-tick angular damping, all letters
+        angularFrictionDrag: 0.04   // per-tick angular damping while a letter is held
+    });
+    const physicsParams = { ...DEFAULT_PHYSICS_PARAMS };
 
 
     // ---- Gravity slider & notch highlights ----
-    function setGravityToPresetValue(presetValue) {
-        currentGravityY = getGravityFromSliderValue(presetValue);
-        if (gravitySliderEl) gravitySliderEl.value = presetValue;
-        updateGravityNotchHighlight(presetValue);
+    // Shared by the vertical preset slider, the notch buttons, and the debug
+    // panel's gravity slider so all three stay in sync — whichever one the
+    // user moves is authoritative and pushes its value onto the other.
+    function setGravityFromSliderValue(sliderVal) {
+        currentGravityY = getGravityFromSliderValue(sliderVal);
+        if (gravitySliderEl) gravitySliderEl.value = sliderVal;
+        if (debugGravityEl) debugGravityEl.value = sliderVal;
+        updateGravityNotchHighlight(sliderVal);
+        updateSliderBubble(debugGravityEl, debugGravityValueEl, 2);
         if (physicsEngine) physicsEngine.gravity.y = currentGravityY;
     }
 
     gravityNotchEls.forEach(notchEl => {
         notchEl.addEventListener('click', () => {
-            const clickedGravityValue = parseFloat(notchEl.dataset.gravityValue);
-            setGravityToPresetValue(clickedGravityValue);
+            setGravityFromSliderValue(parseInt(notchEl.dataset.index, 10));
         });
     });
-    
+
     function updateGravityNotchHighlight(sliderVal) {
         const nearest = Math.round(sliderVal);
         gravityNotchEls.forEach(el => {
@@ -571,10 +591,107 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (gravitySliderEl) {
         gravitySliderEl.addEventListener('input', () => {
-            const val    = parseFloat(gravitySliderEl.value);
-            currentGravityY = getGravityFromSliderValue(val);
-            updateGravityNotchHighlight(val);
-            if (physicsEngine) physicsEngine.gravity.y = currentGravityY;
+            setGravityFromSliderValue(parseFloat(gravitySliderEl.value));
+        });
+    }
+
+
+    // ---- Debug panel ----
+    const debugGravityEl                  = document.getElementById('debugGravity');
+    const debugGravityValueEl             = document.getElementById('debugGravityValue');
+    const debugAirResistanceEl            = document.getElementById('debugAirResistance');
+    const debugAirResistanceValueEl       = document.getElementById('debugAirResistanceValue');
+    const debugFrictionEl                 = document.getElementById('debugFriction');
+    const debugFrictionValueEl            = document.getElementById('debugFrictionValue');
+    const debugRestitutionEl              = document.getElementById('debugRestitution');
+    const debugRestitutionValueEl         = document.getElementById('debugRestitutionValue');
+    const debugAngularFrictionEl          = document.getElementById('debugAngularFriction');
+    const debugAngularFrictionValueEl     = document.getElementById('debugAngularFrictionValue');
+    const debugAngularFrictionDragEl      = document.getElementById('debugAngularFrictionDrag');
+    const debugAngularFrictionDragValueEl = document.getElementById('debugAngularFrictionDragValue');
+    const debugCloseButton                = document.getElementById('debugCloseBtn');
+    const debugResetPhysicsButton         = document.getElementById('debugResetPhysicsBtn');
+    const debugResetLettersButton         = document.getElementById('debugResetLettersBtn');
+
+    // Positions the floating numeric readout above the slider's thumb.
+    function updateSliderBubble(inputEl, outputEl, decimals) {
+        if (!inputEl || !outputEl) return;
+        const min     = parseFloat(inputEl.min);
+        const max     = parseFloat(inputEl.max);
+        const val     = parseFloat(inputEl.value);
+        const percent = (val - min) / (max - min) * 100;
+        outputEl.textContent = val.toFixed(decimals);
+        outputEl.style.left  = `${percent}%`;
+    }
+
+    updateSliderBubble(debugGravityEl, debugGravityValueEl, 2);
+
+    if (debugGravityEl) {
+        debugGravityEl.addEventListener('input', () => {
+            setGravityFromSliderValue(parseFloat(debugGravityEl.value));
+        });
+    }
+
+    function setDebugPanelOpen(isOpen) {
+        if (!debugPanelEl) return;
+        debugPanelEl.classList.toggle('is-open', isOpen);
+        debugPanelEl.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        if (debugToggleButton) debugToggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    if (debugToggleButton && debugPanelEl) {
+        debugToggleButton.addEventListener('click', () => {
+            setDebugPanelOpen(!debugPanelEl.classList.contains('is-open'));
+        });
+    }
+    if (debugCloseButton) {
+        debugCloseButton.addEventListener('click', () => setDebugPanelOpen(false));
+    }
+
+    // Sliders that map straight onto a physicsParams key. frictionAir/friction/
+    // restitution also need pushing onto already-spawned bodies since Matter
+    // reads those properties live off each body every tick.
+    const DEBUG_SLIDER_CONFIGS = [
+        { input: debugAirResistanceEl,       output: debugAirResistanceValueEl,       decimals: 3, param: 'frictionAir',        liveBodyProp: true  },
+        { input: debugFrictionEl,            output: debugFrictionValueEl,            decimals: 2, param: 'friction',           liveBodyProp: true  },
+        { input: debugRestitutionEl,         output: debugRestitutionValueEl,         decimals: 2, param: 'restitution',        liveBodyProp: true  },
+        { input: debugAngularFrictionEl,     output: debugAngularFrictionValueEl,     decimals: 3, param: 'angularFriction',    liveBodyProp: false },
+        { input: debugAngularFrictionDragEl, output: debugAngularFrictionDragValueEl, decimals: 3, param: 'angularFrictionDrag', liveBodyProp: false }
+    ];
+
+    function applyDebugSlider(cfg, val) {
+        physicsParams[cfg.param] = val;
+        cfg.input.value = val;
+        updateSliderBubble(cfg.input, cfg.output, cfg.decimals);
+        if (cfg.liveBodyProp) {
+            [...physicsLetters, ...physicsZapLetters].forEach(obj => { obj.body[cfg.param] = val; });
+        }
+    }
+
+    DEBUG_SLIDER_CONFIGS.forEach(cfg => {
+        if (!cfg.input) return;
+        updateSliderBubble(cfg.input, cfg.output, cfg.decimals);
+        cfg.input.addEventListener('input', () => applyDebugSlider(cfg, parseFloat(cfg.input.value)));
+    });
+
+    if (debugResetPhysicsButton) {
+        debugResetPhysicsButton.addEventListener('click', () => {
+            setGravityFromSliderValue(DEFAULT_GRAVITY_SLIDER_VALUE);
+            DEBUG_SLIDER_CONFIGS.forEach(cfg => {
+                if (cfg.input) applyDebugSlider(cfg, DEFAULT_PHYSICS_PARAMS[cfg.param]);
+            });
+        });
+    }
+
+    if (debugResetLettersButton) {
+        debugResetLettersButton.addEventListener('click', () => {
+            [...physicsLetters, ...physicsZapLetters].forEach(obj => {
+                Body.setPosition(obj.body, { x: obj.origX, y: obj.origY });
+                Body.setAngle(obj.body, 0);
+                Body.setVelocity(obj.body, { x: 0, y: 0 });
+                Body.setAngularVelocity(obj.body, 0);
+                obj.sleepFrames = 0;
+            });
         });
     }
 
@@ -736,18 +853,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ---- Physics body factory ----
-    // frictionAir: 0   → no air resistance (velocity preserved unless gravity/collision)
-    // friction: 0      → no surface friction
-    // frictionStatic: 0
-    // inertia: Infinity → no angular change on collision (keeps rotation from collisions)
-    // Actually we want some rotation so we'll keep inertia default but set frictionAir=0
+    // Bounciness/friction/air-resistance are read live from physicsParams (tunable
+    // via the debug panel) so a slider drag also applies to already-spawned letters.
+    // Angular damping isn't a native Matter property — it's applied manually per
+    // tick in the engine's 'beforeUpdate' handler so it can stay independent of
+    // frictionAir and spike while a letter is being dragged.
 
     function makeLetterBody(cx, cy, w, h) {
         return Bodies.rectangle(cx, cy, w * 0.85, h * 0.85, {
-            restitution:    0.6,
-            friction:       0,
+            restitution:    physicsParams.restitution,
+            friction:       physicsParams.friction,
             frictionStatic: 0,
-            frictionAir:    0,   // no air resistance — velocity constant except gravity
+            frictionAir:    physicsParams.frictionAir,
             density:        0.1
         });
     }
@@ -787,9 +904,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chaosToggleButton.textContent = 'X';
 
         // Reset gravity to Earth
-        currentGravityY = GRAVITY_PRESETS[2].matterY;
-        if (gravitySliderEl) gravitySliderEl.value = '2';
-        updateGravityNotchHighlight(2);
+        setGravityFromSliderValue(2);
 
         const sectionWidth  = heroSectionEl.offsetWidth;
         const sectionHeight = heroSectionEl.offsetHeight;
@@ -833,7 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Body.setVelocity(body, { x: (Math.random() - 0.5) * 14, y: -(Math.random() * 8 + 3) });
             Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.3);
             Composite.add(physicsEngine.world, body);
-            return { body, char: c.char, fontSize: c.fontSize, fontFamily: c.fontFamily, fontStyle: c.fontStyle, fontWeight: c.fontWeight, color: c.color, sleepFrames: 0 };
+            return { body, char: c.char, fontSize: c.fontSize, fontFamily: c.fontFamily, fontStyle: c.fontStyle, fontWeight: c.fontWeight, color: c.color, sleepFrames: 0, origX: c.centerX, origY: c.centerY };
         });
 
         // ZAP background letters — 20% random chance, random teal shade
@@ -862,7 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 spanData.el.style.visibility = 'hidden';
 
-                physicsZapLetters.push({ body, char: spanData.el.textContent, fontSize, fontFamily, fillColor, strokeColor, domSpan: spanData.el, sleepFrames: 0 });
+                physicsZapLetters.push({ body, char: spanData.el.textContent, fontSize, fontFamily, fillColor, strokeColor, domSpan: spanData.el, sleepFrames: 0, origX: cx, origY: cy });
             });
         }
 
@@ -873,6 +988,20 @@ document.addEventListener('DOMContentLoaded', () => {
             constraint: { stiffness: 0.2, render: { visible: false } }
         });
         Composite.add(physicsEngine.world, physicsMouseCon);
+
+        draggedBody = null;
+        Events.on(physicsMouseCon, 'startdrag', e => { draggedBody = e.body; });
+        Events.on(physicsMouseCon, 'enddrag',   () => { draggedBody = null; });
+
+        // Angular friction — not a native Matter property, so it's damped
+        // manually every tick. Letters currently held by the mouse get a
+        // stronger angular friction so a flung drag doesn't send them spinning.
+        Events.on(physicsEngine, 'beforeUpdate', () => {
+            [...physicsLetters, ...physicsZapLetters].forEach(obj => {
+                const damping = obj.body === draggedBody ? physicsParams.angularFrictionDrag : physicsParams.angularFriction;
+                if (damping > 0) Body.setAngularVelocity(obj.body, obj.body.angularVelocity * (1 - damping));
+            });
+        });
 
         physicsRunner = Runner.create();
         Runner.run(physicsRunner, physicsEngine);
@@ -934,6 +1063,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         physicsZapLetters.forEach(({ domSpan }) => { if (domSpan) domSpan.style.visibility = ''; });
         physicsLetters = []; physicsZapLetters = []; wallBodies = []; physicsMouseCon = null;
+        draggedBody = null;
 
         if (physicsCtx) {
             physicsCtx.clearRect(0, 0, physicsCanvas.width, physicsCanvas.height);
@@ -942,6 +1072,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         heroSectionEl.classList.remove('chaos-active');
         chaosToggleButton.textContent = '💥';
+
+        setDebugPanelOpen(false);
 
         // Replay h1 wave
         if (heroH1El && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -983,5 +1115,259 @@ document.addEventListener('DOMContentLoaded', () => {
         physicsCanvas.width  = w;
         physicsCanvas.height = h;
     });
+
+
+    // ----------------------------------------
+    // 8. ABOUT CONVEYOR
+    // Bouncing-letter circles (same idle physics as about.html's carousel)
+    // sliding along a diagonal belt that loops forever and never pauses on
+    // hover. Hovering still aligns a circle's letters into its heading, same
+    // as about.html. Clicking uses the anchor's own href — no JS needed there.
+    // ----------------------------------------
+    const aboutConveyorEl   = document.getElementById('aboutConveyor');
+    const conveyorCircleEls = aboutConveyorEl ? aboutConveyorEl.querySelectorAll('.about-conveyor-circle') : [];
+
+    if (aboutConveyorEl && conveyorCircleEls.length) {
+
+        const conveyorReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const CONVEYOR_LETTER_COLOR_IDLE     = 'rgba(41, 41, 41, 0.55)';
+        const CONVEYOR_LETTER_BOUNCE_MIN     = 0.4;
+        const CONVEYOR_LETTER_BOUNCE_MAX     = 1.3;
+        const CONVEYOR_LETTER_ROTATION_MAX   = 0.03;
+        const CONVEYOR_ALIGN_LERP            = 0.16;
+        const CONVEYOR_ALIGN_ROTATION_LERP   = 0.2;
+        const CONVEYOR_ALIGN_SNAP_DISTANCE   = 0.6;
+
+        // Belt direction (shallow top-right to bottom-left) and speed in px/frame
+        const BELT_ANGLE  = 5 * Math.PI / 180;
+        const BELT_DIR_X  = -Math.cos(BELT_ANGLE);
+        const BELT_DIR_Y  = Math.sin(BELT_ANGLE);
+        const BELT_SPEED  = 0.55;
+
+        let conveyorStates     = [];
+        let beltProgress       = 0;
+        let beltSpacing        = 0;
+        let beltTravelLength   = 0;
+        let beltOriginX        = 0;
+        let beltOriginY        = 0;
+
+        function buildConveyorCircleState(circleEl) {
+            const canvasEl    = circleEl.querySelector('.about-conveyor-canvas');
+            const headingText = circleEl.dataset.heading || '';
+            const color       = circleEl.dataset.color || CONVEYOR_LETTER_COLOR_IDLE;
+            circleEl.style.setProperty('--circle-accent', color);
+
+            const rect = { width: circleEl.offsetWidth, height: circleEl.offsetHeight };
+            const dpr  = window.devicePixelRatio || 1;
+            canvasEl.width  = rect.width  * dpr;
+            canvasEl.height = rect.height * dpr;
+            canvasEl.style.width  = rect.width  + 'px';
+            canvasEl.style.height = rect.height + 'px';
+            const ctx = canvasEl.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const circleRadius = rect.width / 2;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            let fontSize = circleRadius * 0.34;
+            const maxTextWidth = circleRadius * 1.7;
+            ctx.font = `700 ${fontSize}px 'Poppins', sans-serif`;
+            while (ctx.measureText(headingText).width > maxTextWidth && fontSize > 10) {
+                fontSize -= 1;
+                ctx.font = `700 ${fontSize}px 'Poppins', sans-serif`;
+            }
+
+            const chars       = headingText.split('');
+            const charWidths  = chars.map(ch => ctx.measureText(ch).width);
+            const totalWidth  = charWidths.reduce((sum, w) => sum + w, 0);
+            const startX      = centerX - totalWidth / 2;
+
+            const letters = [];
+            let cumulativeWidth = 0;
+            chars.forEach((ch, i) => {
+                const letterWidth = charWidths[i];
+                const targetX = startX + cumulativeWidth + letterWidth / 2;
+                cumulativeWidth += letterWidth;
+                if (ch === ' ') return;
+
+                const letterRadius = fontSize * 0.32;
+                const spawnAngle   = Math.random() * Math.PI * 2;
+                const spawnRadius  = Math.random() * (circleRadius - letterRadius);
+                const moveAngle    = Math.random() * Math.PI * 2;
+                const speed        = CONVEYOR_LETTER_BOUNCE_MIN + Math.random() * (CONVEYOR_LETTER_BOUNCE_MAX - CONVEYOR_LETTER_BOUNCE_MIN);
+
+                letters.push({
+                    char: ch,
+                    x: centerX + Math.cos(spawnAngle) * spawnRadius,
+                    y: centerY + Math.sin(spawnAngle) * spawnRadius,
+                    vx: Math.cos(moveAngle) * speed,
+                    vy: Math.sin(moveAngle) * speed,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * CONVEYOR_LETTER_ROTATION_MAX,
+                    letterRadius, fontSize, targetX, targetY: centerY
+                });
+            });
+
+            return { circleEl, canvasEl, ctx, circleRadius, centerX, centerY, letters, aligned: false, hovered: false, color };
+        }
+
+        function sizeBelt() {
+            const containerRect = aboutConveyorEl.getBoundingClientRect();
+            const diameter = conveyorStates.length ? conveyorStates[0].circleRadius * 2 : 0;
+            const count = conveyorStates.length || 1;
+            // Angle is shallow, so the belt's travel is mostly horizontal —
+            // enough length to cross the full width plus one circle either side.
+            beltTravelLength = containerRect.width + diameter * 2;
+            // Spacing MUST divide the travel length evenly so the modulo wrap lands
+            // a circle exactly where the last one wrapped off — otherwise there's a
+            // gap (or overlap) once per loop instead of a seamless belt.
+            beltSpacing = beltTravelLength / count;
+            beltOriginX = containerRect.width + diameter;
+            // Centre the shallow line's total vertical drift within the container
+            // so it starts high-right and ends low-left without clipping early.
+            const verticalDrift = beltTravelLength * BELT_DIR_Y;
+            beltOriginY = containerRect.height / 2 - diameter / 2 - verticalDrift / 2;
+        }
+
+        function rebuildConveyorCircles() {
+            conveyorStates = Array.from(conveyorCircleEls).map(buildConveyorCircleState);
+            sizeBelt();
+        }
+
+        function stepBouncingLetters(state) {
+            const { letters, circleRadius, centerX, centerY } = state;
+            letters.forEach(letter => {
+                letter.x += letter.vx;
+                letter.y += letter.vy;
+                letter.rotation += letter.rotationSpeed;
+
+                const dx = letter.x - centerX;
+                const dy = letter.y - centerY;
+                const dist = Math.hypot(dx, dy);
+                const maxDist = circleRadius - letter.letterRadius;
+                if (dist > maxDist) {
+                    const nx = dx / dist, ny = dy / dist;
+                    letter.x = centerX + nx * maxDist;
+                    letter.y = centerY + ny * maxDist;
+                    const dot = letter.vx * nx + letter.vy * ny;
+                    letter.vx -= 2 * dot * nx;
+                    letter.vy -= 2 * dot * ny;
+                }
+            });
+
+            for (let i = 0; i < letters.length; i++) {
+                for (let j = i + 1; j < letters.length; j++) {
+                    const a = letters[i], b = letters[j];
+                    const dx = b.x - a.x, dy = b.y - a.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = a.letterRadius + b.letterRadius;
+                    if (dist > 0 && dist < minDist) {
+                        const nx = dx / dist, ny = dy / dist;
+                        const overlap = (minDist - dist) / 2;
+                        a.x -= nx * overlap; a.y -= ny * overlap;
+                        b.x += nx * overlap; b.y += ny * overlap;
+                        const relVx = b.vx - a.vx, relVy = b.vy - a.vy;
+                        const relDot = relVx * nx + relVy * ny;
+                        if (relDot < 0) {
+                            a.vx += relDot * nx; a.vy += relDot * ny;
+                            b.vx -= relDot * nx; b.vy -= relDot * ny;
+                        }
+                    }
+                }
+            }
+        }
+
+        function stepAligningLetters(state) {
+            state.letters.forEach(letter => {
+                letter.x += (letter.targetX - letter.x) * CONVEYOR_ALIGN_LERP;
+                letter.y += (letter.targetY - letter.y) * CONVEYOR_ALIGN_LERP;
+
+                let rotDelta = (0 - letter.rotation) % (Math.PI * 2);
+                if (rotDelta > Math.PI)  rotDelta -= Math.PI * 2;
+                if (rotDelta < -Math.PI) rotDelta += Math.PI * 2;
+                letter.rotation += rotDelta * CONVEYOR_ALIGN_ROTATION_LERP;
+
+                const distToTarget = Math.hypot(letter.targetX - letter.x, letter.targetY - letter.y);
+                if (distToTarget < CONVEYOR_ALIGN_SNAP_DISTANCE) {
+                    letter.x = letter.targetX;
+                    letter.y = letter.targetY;
+                    letter.rotation = 0;
+                }
+            });
+        }
+
+        function renderConveyorCircle(state) {
+            const { ctx, canvasEl, letters, aligned } = state;
+            const dpr = window.devicePixelRatio || 1;
+            ctx.clearRect(0, 0, canvasEl.width / dpr, canvasEl.height / dpr);
+            letters.forEach(letter => {
+                ctx.save();
+                ctx.translate(letter.x, letter.y);
+                ctx.rotate(letter.rotation);
+                ctx.font = `700 ${letter.fontSize}px 'Poppins', sans-serif`;
+                ctx.fillStyle = aligned ? state.color : CONVEYOR_LETTER_COLOR_IDLE;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(letter.char, 0, 0);
+                ctx.restore();
+            });
+        }
+
+        conveyorCircleEls.forEach(circleEl => {
+            circleEl.addEventListener('mouseenter', () => {
+                const state = conveyorStates.find(s => s.circleEl === circleEl);
+                if (state) state.hovered = true;
+            });
+            circleEl.addEventListener('mouseleave', () => {
+                const state = conveyorStates.find(s => s.circleEl === circleEl);
+                if (!state) return;
+                state.hovered = false;
+                state.letters.forEach(letter => {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = CONVEYOR_LETTER_BOUNCE_MIN + Math.random() * (CONVEYOR_LETTER_BOUNCE_MAX - CONVEYOR_LETTER_BOUNCE_MIN);
+                    letter.vx = Math.cos(angle) * speed;
+                    letter.vy = Math.sin(angle) * speed;
+                    letter.rotationSpeed = (Math.random() - 0.5) * CONVEYOR_LETTER_ROTATION_MAX;
+                });
+            });
+        });
+
+        // Belt movement is intentionally independent of hover — unlike the about.html
+        // carousel, this teaser never pauses.
+        function updateBeltPositions() {
+            if (!conveyorReducedMotion) beltProgress = (beltProgress + BELT_SPEED) % beltTravelLength;
+            conveyorStates.forEach((state, i) => {
+                const t = (beltProgress + i * beltSpacing) % beltTravelLength;
+                const x = beltOriginX + t * BELT_DIR_X;
+                const y = beltOriginY + t * BELT_DIR_Y;
+                state.circleEl.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        }
+
+        let conveyorAnimFrameId = null;
+        function animateConveyor() {
+            conveyorStates.forEach(state => {
+                state.aligned = state.hovered;
+                if (state.aligned) stepAligningLetters(state);
+                else stepBouncingLetters(state);
+                renderConveyorCircle(state);
+            });
+            updateBeltPositions();
+            conveyorAnimFrameId = requestAnimationFrame(animateConveyor);
+        }
+
+        (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => {
+            rebuildConveyorCircles();
+            if (!conveyorAnimFrameId) animateConveyor();
+        });
+
+        let conveyorResizeTid;
+        window.addEventListener('resize', () => {
+            clearTimeout(conveyorResizeTid);
+            conveyorResizeTid = setTimeout(rebuildConveyorCircles, 150);
+        });
+    }
 
 });

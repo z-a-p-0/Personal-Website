@@ -605,6 +605,15 @@ document.addEventListener('DOMContentLoaded', () => {
         circleEl.addEventListener('click', () => onCircleClick(idx));
     });
 
+    // Deep link from the index page's conveyor belt: ?circle=<data-key> activates
+    // the matching circle here the same way clicking it directly would.
+    function activateCircleFromQuery() {
+        const requestedKey = new URLSearchParams(window.location.search).get('circle');
+        if (!requestedKey) return;
+        const idx = Array.from(aboutCircleElements).findIndex(el => el.dataset.key === requestedKey);
+        if (idx !== -1) onCircleClick(idx);
+    }
+
     function stepStageLetters() {
         stageFrame++;
 
@@ -734,6 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => {
         rebuildAllCircles();
         if (!circleAnimFrameId) animateAllCircles();
+        activateCircleFromQuery();
     });
 
     let circleResizeTimeoutId;
