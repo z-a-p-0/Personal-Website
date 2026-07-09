@@ -17,6 +17,11 @@
     margin-bottom: 50px;
 }
 
+.about-stage {
+    position: relative;
+    z-index: 0;
+}
+
 .about-circle-grid {
     display: flex;
     flex-wrap: wrap;
@@ -52,6 +57,22 @@
     display: block;
 }
 
+.about-text-output {
+    position: relative;
+    min-height: 320px;
+    margin-top: 50px;
+}
+
+.about-stage-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+}
+
 @media (max-width: 480px) {
     .about-circle-grid { gap: 24px; }
+    .about-text-output { min-height: 380px; }
 }
