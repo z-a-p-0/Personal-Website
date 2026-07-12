@@ -18,6 +18,7 @@ Don't bother testing the file yourself, user will open the file themself and pro
 - `css/components.css` — buttons, cards, contact form
 - `css/about.css` — about-page-specific styles
 - `js/main.js`, `js/about.js` — one JS file per page; no bundler or shared entry point, each attaches listeners on `DOMContentLoaded`
+- `js/page-transition.js`, `css/page-transition.css` — the one shared file pair, included on both pages identically; handles the ZAP-wall transition between internal page navigations (sessionStorage-gated so it never fires on a direct URL load)
 
 ## Design system
 
@@ -28,7 +29,7 @@ Don't bother testing the file yourself, user will open the file themself and pro
 - CSS is organized into banner-comment sections
   (`/* === SECTION NAME === */`); add new rules under the relevant existing section instead of appending ad hoc at the end, unless a new section would be more appropriate
 
-## Commenting conventions
+## Coding and commenting conventions
 
 - JS files open with a banner comment, then subsection banners (`// MOBILE MENU TOGGLE`, etc.) — see `js/main.js`.
 - Comments explain *why*, not what: non-obvious constraints, workarounds, or invariants (e.g. "always resolve the live DOM node" in the typewriter code, the space/`white-space` note in character harvesting). Don't add comments that restate what the code visibly does.

@@ -1,0 +1,86 @@
+/* ============================================ */
+/* PAGE TRANSITION — ZAP WALL OVERLAY           */
+/* ============================================ */
+/* Bottom-left -> top-right wall of ZAPs, matching hero-zap styling.
+   Overlay is only ever inserted by js/page-transition.js — never present
+   on a page loaded directly from a URL. Each row is its own strip that flies
+   in/out independently (staggered bottom-to-top via --pt-delay, set inline
+   per row in JS), rather than the whole wall moving as one block. */
+.page-transition-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.pt-zap-field {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 170vw;
+    height: 170vh;
+    transform: translate(-50%, -50%) rotate(-7deg);
+    display: flex;
+    flex-direction: column;
+}
+
+.pt-row {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow: hidden;
+    background-color: var(--light-bg);
+    opacity: 0;
+    /* fly in from bottom-left at ~7° angle: tan(7°) ≈ 0.123, so ratio ~1:8 */
+    transform: translate3d(-80vw, 10vh, 0);
+    will-change: transform, opacity;
+}
+
+/* --pt-delay must be repeated inside each shorthand value below — the
+   transition shorthand resets any sub-property it doesn't mention
+   (including delay), so a delay set only on the base .pt-row rule gets
+   clobbered by these more specific selectors and every row moves in sync. */
+.pt-leaving .pt-row {
+    transition: transform 0.55s cubic-bezier(.65, 0, .35, 1) var(--pt-delay, 0ms),
+                opacity 0.4s ease calc(var(--pt-delay, 0ms) + 0.2s);
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+}
+
+.pt-stationary .pt-row {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+}
+
+.pt-arriving .pt-row {
+    transition: transform 0.55s cubic-bezier(.65, 0, .35, 1) var(--pt-delay, 0ms),
+                opacity 0.4s ease calc(var(--pt-delay, 0ms) + 0.2s);
+    /* fly out to top-right at ~7° angle */
+    transform: translate3d(80vw, -10vh, 0);
+    opacity: 0;
+}
+
+.pt-row span {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    line-height: 1;
+    margin-right: clamp(1rem, 3vw, 2.5rem);
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(41, 41, 41, 0.22);
+}
+
+.pt-row span.pt-teal {
+    color: var(--primary-color);
+    -webkit-text-stroke: 1.5px rgba(29, 211, 176, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pt-row,
+    .pt-leaving .pt-row,
+    .pt-arriving .pt-row { transition: none !important; }
+}
