@@ -25,7 +25,7 @@
                 <ul role="menubar">
                     <li role="none"><a href="#home" role="menuitem">Home</a></li>
                     <li role="none"><a href="about.html" role="menuitem">About</a></li>
-                    <li role="none"><a href="#portfolio" role="menuitem">Portfolio</a></li>
+                    <li role="none"><a href="projects.html" role="menuitem">Portfolio</a></li>
                     <li role="none"><a href="#footer" role="menuitem">Contact</a></li>
                 </ul>
             </nav>
@@ -161,26 +161,93 @@
         </section>
 
         <!-- PORTFOLIO -->
+        <!-- A deck of project cards: three fan out at a time, the rest sit in the
+             pack behind. "Next Cards" riffles the visible three back in and deals
+             three more out. Card order/slotting is driven by js/main.js (deck). -->
         <section id="portfolio" class="section portfolio-showcase">
             <div class="container">
                 <h3>Featured Projects</h3>
-                <div class="project-grid">
-                    <article class="card project-item">
-                        <h4>Website Made</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        <a href="#" target="_blank" rel="noopener noreferrer" class="button button-secondary">View Project</a>
+                <p class="portfolio-intro">A rotating deck of things I've built — riffle through the pack.</p>
+
+                <div class="project-deck" id="projectDeck" aria-live="polite">
+                    <article class="card project-item deck-card" style="--card-accent: var(--primary-color);">
+                        <div class="project-thumb" aria-hidden="true"><i class="fas fa-code"></i></div>
+                        <h4>Lorem Nebula</h4>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit sed do eiusmod tempor.</p>
+                        <ul class="project-points">
+                            <li>Consectetur adipiscing elit</li>
+                            <li>Sed do eiusmod tempor</li>
+                        </ul>
+                        <a href="projects.html" class="button button-secondary">View Project</a>
                     </article>
-                    <article class="card project-item">
-                        <h4>Software Made</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        <a href="#" target="_blank" rel="noopener noreferrer" class="button button-secondary">View Project</a>
+                    <article class="card project-item deck-card" style="--card-accent: var(--accent-color);">
+                        <div class="project-thumb" aria-hidden="true"><i class="fas fa-gamepad"></i></div>
+                        <h4>Ipsum Foundry</h4>
+                        <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi.</p>
+                        <ul class="project-points">
+                            <li>Ullamco laboris nisi</li>
+                            <li>Aliquip ex ea commodo</li>
+                        </ul>
+                        <a href="projects.html" class="button button-secondary">View Project</a>
                     </article>
-                    <article class="card project-item">
-                        <h4>Games stuff</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        <a href="#" target="_blank" rel="noopener noreferrer" class="button button-secondary">View Project</a>
+                    <article class="card project-item deck-card" style="--card-accent: var(--secondary-color);">
+                        <div class="project-thumb" aria-hidden="true"><i class="fas fa-cube"></i></div>
+                        <h4>Dolor Engine</h4>
+                        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum.</p>
+                        <ul class="project-points">
+                            <li>Reprehenderit voluptate</li>
+                            <li>Velit esse cillum</li>
+                        </ul>
+                        <a href="projects.html" class="button button-secondary">View Project</a>
+                    </article>
+                    <article class="card project-item deck-card" style="--card-accent: #FF6F91;">
+                        <div class="project-thumb" aria-hidden="true"><i class="fas fa-palette"></i></div>
+                        <h4>Amet Atlas</h4>
+                        <p>Excepteur sint occaecat cupidatat non proident sunt in culpa qui officia.</p>
+                        <ul class="project-points">
+                            <li>Cupidatat non proident</li>
+                            <li>Sunt in culpa qui officia</li>
+                        </ul>
+                        <a href="projects.html" class="button button-secondary">View Project</a>
+                    </article>
+                    <article class="card project-item deck-card" style="--card-accent: #0A66C2;">
+                        <div class="project-thumb" aria-hidden="true"><i class="fas fa-terminal"></i></div>
+                        <h4>Consectetur Grid</h4>
+                        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium.</p>
+                        <ul class="project-points">
+                            <li>Perspiciatis unde omnis</li>
+                            <li>Natus error sit voluptatem</li>
+                        </ul>
+                        <a href="projects.html" class="button button-secondary">View Project</a>
+                    </article>
+                    <article class="card project-item deck-card" style="--card-accent: #C879FF;">
+                        <div class="project-thumb" aria-hidden="true"><i class="fas fa-wand-magic-sparkles"></i></div>
+                        <h4>Tempor Loom</h4>
+                        <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
+                        <ul class="project-points">
+                            <li>Voluptatem quia voluptas</li>
+                            <li>Aspernatur aut odit</li>
+                        </ul>
+                        <a href="projects.html" class="button button-secondary">View Project</a>
                     </article>
                 </div>
+
+                <div class="deck-controls deck-controls-stacked">
+                    <div class="deck-cycle-row">
+                        <button class="button button-secondary deck-cycle" id="deckPrevBtn" aria-controls="projectDeck" aria-label="Previous cards">
+                            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                        </button>
+                        <button class="button button-secondary deck-cycle" id="deckShuffleBtn" aria-controls="projectDeck" aria-label="Shuffle deck">
+                            <i class="fas fa-shuffle" aria-hidden="true"></i>
+                        </button>
+                        <button class="button button-secondary deck-cycle" id="deckNextBtn" aria-controls="projectDeck" aria-label="Next cards">
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <a href="projects.html" class="button button-primary">See More Projects</a>
+                </div>
+
+                <div class="deck-stack" id="projectDeckStack" aria-hidden="true"></div>
             </div>
         </section>
 

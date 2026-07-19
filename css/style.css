@@ -469,6 +469,277 @@ section { padding: 80px 0; }
 .project-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 10px; }
 .contact-form-section { background-color: var(--light-bg); }
 .contact-intro { text-align: center; margin-bottom: 40px; }
+.portfolio-intro { text-align: center; margin-bottom: 20px; }
+
+/* ============================================ */
+/* 4b. PROJECT DECK (home + projects.html top)  */
+/* ============================================ */
+/* Cards are absolutely stacked; JS assigns each a slot class (left/center/
+   right = the three fanned out, pack = stacked behind) and CSS owns the
+   transform per slot, so cycling is just a class swap that transitions. */
+.project-deck {
+    position: relative;
+    height: clamp(360px, 46vw, 440px);
+    margin: 30px auto 40px;
+    max-width: 1000px;
+    perspective: 1400px;
+}
+
+.project-deck .deck-card {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: clamp(260px, 30vw, 320px);
+    height: 100%;
+    transform: translateX(-50%);
+    transform-origin: center bottom;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.4s ease, box-shadow 0.3s;
+    will-change: transform;
+}
+
+/* Colour the thumbnail band per card via its --card-accent */
+.deck-card .project-thumb,
+.project-item .project-thumb {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    margin: -30px -30px 4px;
+    border-radius: 13px 13px 0 0;
+    background: linear-gradient(135deg, var(--card-accent, var(--primary-color)), rgba(255, 255, 255, 0.35));
+    color: var(--white);
+    font-size: 2.4rem;
+}
+
+.project-thumb i {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card:hover .project-thumb i,
+.card:focus-within .project-thumb i {
+    transform: scale(1.18) rotate(-6deg);
+}
+
+/* Shine sweep across the thumb band on hover. Transition lives on the :hover
+   rule only, so the sweep animates in on hover but snaps back instantly on
+   unhover instead of visibly reversing. */
+.project-thumb::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -75%;
+    width: 50%;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+    transform: skewX(-20deg);
+}
+.card:hover .project-thumb::after,
+.card:focus-within .project-thumb::after {
+    left: 125%;
+    transition: left 0.6s ease;
+}
+
+.project-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+.project-points li {
+    position: relative;
+    padding-left: 20px;
+    font-size: 0.92rem;
+    color: #555;
+}
+.project-points li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 0.55em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--card-accent, var(--primary-color));
+}
+
+/* --- Slot transforms. Percentages are relative to the card's own width, so
+   -50% recentres and the extra offset fans siblings out either side. --- */
+/* z-index sits well above slot-pack's max (20) so a card mid-flight out of
+   the pack is always rendered in front of the deck it's being dealt from.
+   Left/center/right are also given distinct levels (rather than left/right
+   tying) so the three fanned cards always overlap in the same left-in-front,
+   then center, then right order — matching deal order (left arrives first)
+   — both at rest and mid-flight, since z-index is set by the slot class the
+   instant a card starts crossing, independent of the flight's duration. */
+.deck-card.slot-left   { transform: translateX(calc(-50% - var(--fan, 108%))) rotate(-7deg); z-index: 52; }
+.deck-card.slot-center { transform: translateX(-50%) translateY(-6px); z-index: 51; }
+.deck-card.slot-right  { transform: translateX(calc(-50% + var(--fan, 108%))) rotate(7deg);  z-index: 50; }
+
+/* Slot transforms own the transform property, so hover lift must be restated
+   per slot rather than relying on the base .card:hover. Lift only (no scale)
+   so the deck's footprint never grows on hover. */
+.deck-card.slot-center:hover,
+.deck-card.slot-center:focus-within { transform: translateX(-50%) translateY(-14px); }
+.deck-card.slot-left:hover,
+.deck-card.slot-left:focus-within   { transform: translateX(calc(-50% - var(--fan, 108%))) translateY(-10px) rotate(-5deg); }
+.deck-card.slot-right:hover,
+.deck-card.slot-right:focus-within  { transform: translateX(calc(-50% + var(--fan, 108%))) translateY(-10px) rotate(5deg); }
+
+/* Side cards can be clicked to slide into the centre slot */
+.deck-card.slot-left,
+.deck-card.slot-right { cursor: pointer; }
+/* Deck itself is swipeable; stop the browser panning horizontally instead */
+.project-deck { touch-action: pan-y; }
+
+/* Packed cards ARE the deck stack — no decorative stand-in. Each one is the
+   real card, tilted back into an isometric lie-flat pose (rotateX + rotateZ,
+   like looking down at a stack of cards on a table) and stepped down by
+   depth so the card behind peeks out from under the one in front — the
+   sliver you see for each is that card's own thumb colour, not a generic
+   stripe. Positioned over the .deck-stack spacer below the controls via
+   --stack-x/--stack-y (measured in JS — see initProjectDeck). */
+.deck-card.slot-pack {
+    pointer-events: none;
+    /* No per-depth x offset: the near corner of every packed card stays on
+       the same vertical line as it recedes into the stack, instead of
+       drifting off diagonally. */
+    transform:
+        translate(calc(-50% + var(--stack-x, 0px)), calc(var(--stack-y, 320px) + var(--depth, 0) * 7px))
+        rotate(0deg)
+        rotateX(58deg)
+        rotateZ(-18deg)
+        scale(var(--stack-scale, 0.3));
+    z-index: calc(20 - var(--depth, 0));
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+.deck-card.slot-pack .button { pointer-events: none; }
+
+.deck-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+}
+/* Home page only: cycle buttons sit in their own row above the "See More
+   Projects" link, instead of sharing one row with it. */
+.deck-controls-stacked {
+    flex-direction: column;
+    align-items: center;
+}
+.deck-cycle-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+/* .button + .button-secondary (components.css) load after this file and tie
+   on specificity, so plain .deck-cycle would lose display/padding to them —
+   double-class selector needed to actually win the cascade. */
+.button.deck-cycle {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+.deck-cycle i { transition: transform 0.3s ease; }
+#deckNextBtn:hover i { transform: translateX(4px); }
+#deckPrevBtn:hover i { transform: translateX(-4px); }
+#deckShuffleBtn:hover i { transform: rotate(180deg); }
+.deck-cycle:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Spacer only — no visual chrome of its own. Real height comes from the
+   card slivers rendered over it (position: absolute children of
+   .project-deck); this just reserves layout space and gives JS a stable
+   element to measure for --stack-x/--stack-y. */
+.deck-stack {
+    position: relative;
+    width: clamp(260px, 30vw, 320px);
+    height: clamp(90px, 12vw, 140px);
+    margin: 20px auto 0;
+}
+
+/* ============================================ */
+/* 4c. PROJECTS PAGE (projects.html)            */
+/* ============================================ */
+.projects-intro-section { background-color: var(--light-bg); text-align: center; padding-top: 60px; }
+.projects-intro-section .lead { max-width: 640px; margin: 0 auto; }
+.projects-deck-section { background-color: #f8f5f1; }
+/* Fades out once "Show All Projects" has dealt every card out of it, then
+   projects.js sets [hidden] once the transition ends. Deliberately just a
+   fade (no shrinking/overflow tricks) — the fanned left/right cards are
+   MEANT to render outside .container's own box, so anything that clips or
+   constrains that box (overflow: hidden, a grid track sized off content)
+   cuts them off while the section is still visible/in use. */
+.projects-deck-section {
+    /* transform kept in the list (matching .section's own transition) so the
+       scroll-reveal fade-in this section already gets from .section/.visible
+       still animates — this rule wins the cascade over .section's shorter
+       list since both are single-class selectors and this one loads later. */
+    transition: opacity 0.4s ease, transform 0.6s ease;
+}
+.projects-deck-section.deck-emptied { opacity: 0; }
+.projects-deck-section[hidden] { display: none; }
+
+.projects-all-section { background-color: var(--white); }
+.projects-all-header { text-align: center; margin-bottom: 30px; }
+
+/* Full grid stays collapsed until "Show All" deals it out. Cards start
+   offset/rotated (as if still in the pack) and settle into the grid with a
+   per-card stagger delay set inline by projects.js. */
+.project-full-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    margin-top: 10px;
+}
+.project-full-grid[hidden] { display: none; }
+
+.project-full-grid .deal-card {
+    opacity: 0;
+    transform: translateY(40px) rotate(-4deg) scale(0.94);
+    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--deal-delay, 0ms);
+}
+.project-full-grid.dealt .deal-card {
+    opacity: 1;
+    transform: none;
+}
+
+/* A card that opens a full case study reads a little bolder */
+.project-item .card-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; align-items: center; }
+.case-study-link { font-weight: 700; color: var(--card-accent, var(--primary-color)); text-decoration: none; font-size: 0.95rem; }
+.case-study-link:hover { text-decoration: underline; }
+.case-study-link i { margin-left: 4px; transition: transform 0.3s ease; }
+.case-study-link:hover i { transform: translateX(4px); }
+
+/* ============================================ */
+/* 4d. CASE STUDY (projects/[name].html)        */
+/* ============================================ */
+.case-hero {
+    padding: 90px 0 70px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--case-accent, var(--primary-color)), var(--light-bg));
+    color: var(--dark-text);
+}
+.case-hero h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); }
+.case-hero .case-tagline { max-width: 620px; margin: 12px auto 0; font-size: 1.1rem; }
+.case-back { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; text-decoration: none; color: var(--dark-text); font-weight: 600; }
+.case-back i { transition: transform 0.3s ease; }
+.case-back:hover i { transform: translateX(-4px); }
+
+.case-body { max-width: 760px; margin: 0 auto; }
+.case-body h3 { text-align: left; font-size: 1.8rem; margin: 40px 0 14px; }
+.case-body p { margin-bottom: 14px; }
+.case-highlights { list-style: none; display: grid; gap: 14px; margin: 10px 0; }
+.case-highlights li { position: relative; padding-left: 30px; }
+.case-highlights li i { position: absolute; left: 0; top: 4px; color: var(--case-accent, var(--primary-color)); }
+.case-cta { text-align: center; margin-top: 40px; }
 
 /* ============================================ */
 /* 5. FOOTER                                    */
@@ -486,6 +757,10 @@ section { padding: 80px 0; }
     section { padding: 60px 0; }
     .hero-section { padding: 80px 0; }
     .project-grid { grid-template-columns: repeat(2, 1fr); }
+    .project-full-grid { grid-template-columns: repeat(2, 1fr); }
+    /* Tighter fan so the side cards don't run off narrow viewports */
+    .project-deck { --fan: 72%; }
+    .deck-card { width: clamp(220px, 40vw, 300px); }
 }
 
 @media (max-width: 768px) {
@@ -496,6 +771,11 @@ section { padding: 80px 0; }
     .navbar li a { padding: 14px 20px; border-bottom: none; border-left: 3px solid transparent; }
     .navbar li a:hover { border-bottom-color: transparent; border-left-color: var(--primary-color); background-color: #f5f5f5; }
     .project-grid { grid-template-columns: 1fr; }
+    .project-full-grid { grid-template-columns: 1fr; }
+    /* On phones the fan is too cramped: hide the side cards, show one at a time */
+    .project-deck { --fan: 50%; height: clamp(400px, 120vw, 460px); }
+    .deck-card { width: min(88vw, 320px); }
+    .deck-card.slot-left, .deck-card.slot-right { opacity: 0; pointer-events: none; }
     .footer-content { flex-direction: column; gap: 16px; text-align: center; }
     .social-links a { margin: 0 10px; }
     .gravity-slider-panel { left: 8px; }
@@ -512,4 +792,16 @@ section { padding: 80px 0; }
 @media (prefers-reduced-motion: reduce) {
     #heroH1 .h1-letter { opacity: 1; animation: none; }
     #heroP              { opacity: 1; animation: none; }
+    /* Deck still slots correctly, just no fly animation between states —
+       initProjectDeck also skips the WAAPI .animate() call entirely under
+       reduced motion, so this only needs to cover the plain class-swap. */
+    .deck-card,
+    .project-full-grid .deal-card { transition: none; }
+    .project-full-grid .deal-card { opacity: 1; transform: none; }
+    /* No shine sweep, icon pop or lift travel — hover still shows via shadow/border */
+    .card { transition: none; }
+    .card:hover, .card:focus-within { transform: none; }
+    .project-thumb::after { display: none; }
+    .project-thumb i { transition: none; }
+    .card:hover .project-thumb i, .card:focus-within .project-thumb i { transform: none; }
 }

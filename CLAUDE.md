@@ -13,11 +13,12 @@ Don't bother testing the file yourself, user will open the file themself and pro
 
 ## Structure
 
-- `index.html`, `about.html` — pages
+- `index.html`, `about.html`, `projects.html` — pages; `projects/case-study.html` — case-study template (assets referenced one level up via `../`)
 - `css/style.css` — layout, sections, media queries, CSS custom properties (`:root`)
 - `css/components.css` — buttons, cards, contact form
 - `css/about.css` — about-page-specific styles
-- `js/main.js`, `js/about.js` — one JS file per page; no bundler or shared entry point, each attaches listeners on `DOMContentLoaded`
+- `js/main.js`, `js/about.js`, `js/projects.js` — one JS file per page; no bundler or shared entry point, each attaches listeners on `DOMContentLoaded`. `projects.js` is reused by the case-study page (its deck/grid logic is all null-guarded)
+- Project deck: cards fan three-at-a-time from a pack; JS assigns slot classes (`slot-left/center/right/pack`) and CSS owns the per-slot transforms. On `projects.html` the deck is cloned from the "Show All" full grid so card markup lives in one place
 - `js/page-transition.js`, `css/page-transition.css` — the one shared file pair, included on both pages identically; handles the ZAP-wall transition between internal page navigations (sessionStorage-gated so it never fires on a direct URL load)
 
 ## Design system

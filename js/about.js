@@ -216,12 +216,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // but is capped so circles at the farthest *settled* slot (an integer offset — circles
     // only pass through the half-integer wrap point for an instant) stay inside the
     // carousel's clip box, and floored at a full diameter so neighbours never overlap and
-    // steal each other's hover/click target. ----
+    // steal each other's hover/click target. With an even circle count the wrap point itself
+    // lands on a whole slot (count/2), not a half-integer — that circle sits exactly
+    // antipodal and its offset flips discontinuously between +count/2 and -count/2 as the
+    // carousel rotates through it. Using count-1 keeps the farthest settled slot one short
+    // of that unstable point (matching the odd-count case) so the flip stays clipped outside
+    // the carousel's visible box instead of teleporting a fully visible circle. ----
     function sizeCarousel() {
         if (!aboutCarouselEl || !circleStates.length) return;
         const carouselRect = aboutCarouselEl.getBoundingClientRect();
         const circleDiameter = circleStates[0].circleRadius * 2;
-        const maxSettledOffset = Math.max(1, Math.floor(circleStates.length / 2));
+        const maxSettledOffset = Math.max(1, Math.floor((circleStates.length - 1) / 2));
         const maxSpacing = (carouselRect.width / 2 - circleDiameter / 2) / maxSettledOffset;
         const desiredSpacing = Math.max(circleDiameter * 1.15, carouselRect.width / 3.4);
         carouselSpacing = Math.max(circleDiameter * 1.05, Math.min(desiredSpacing, maxSpacing));
