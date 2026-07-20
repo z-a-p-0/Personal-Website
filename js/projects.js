@@ -109,7 +109,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let posInOrder = new Array(cardCount);
         function rebuildPosInOrder() { deckOrder.forEach((idx, p) => { posInOrder[idx] = p; }); }
         rebuildPosInOrder();
-        let isShuffling = false;
+        // Guards Next/Prev/Shuffle against overlapping each other — without it,
+        // a Shuffle (or another Next/Prev) landing mid-flight cancels the
+        // in-progress staggered card animations at whatever point they'd each
+        // individually reached, which is exactly what left random fanned cards
+        // stuck looking packed ("ghost" cards) after a quick Next-then-Shuffle.
+        let isBusy = false;
 
         const posOf = (i, start) => (i - start + cardCount) % cardCount;
 
@@ -255,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // (fan-to-fan reshuffle, or pack cards just shifting depth) gets the
         // plain CSS transition already on .deck-card/.slot-pack.
         function renderDeck(prevStart, dir) {
+            const flights = []; // crossing-card anim.finished promises, so callers can await the flight settling
             deckCards.forEach((card, i) => {
                 const pos = posOf(posInOrder[i], deckStart); // 0/1/2 fanned, rest packed
                 const isFanned = pos < 3;
@@ -342,16 +348,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
                         fill: 'both',
                     });
-                    anim.finished.then(() => { anim.cancel(); card.style.removeProperty('z-index'); }).catch(() => {}); // hand back control to the CSS class
+                    flights.push(anim.finished.then(() => { anim.cancel(); card.style.removeProperty('z-index'); }).catch(() => {})); // hand back control to the CSS class
                 }
             });
+            return Promise.all(flights);
         }
 
         function advanceDeck(step) {
-            if (isShuffling) return;
+            if (isBusy) return;
+            isBusy = true;
+            setDeckControlsDisabled(true);
             const prevStart = deckStart;
             deckStart = ((deckStart + step) % cardCount + cardCount) % cardCount;
-            renderDeck(prevStart, Math.sign(step));
+            renderDeck(prevStart, Math.sign(step)).then(() => {
+                isBusy = false;
+                setDeckControlsDisabled(false);
+            });
         }
 
         const deckPrevBtnEl = document.getElementById('deckPrevBtn');
@@ -391,8 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function shuffleDeck() {
-            if (isShuffling || cardCount < 2) return;
-            isShuffling = true;
+            if (isBusy || cardCount < 2) return;
+            isBusy = true;
             setDeckControlsDisabled(true);
 
             if (reducedMotion) {
@@ -400,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 rebuildPosInOrder();
                 deckStart = 0;
                 renderDeck(null, 0);
-                isShuffling = false;
+                isBusy = false;
                 setDeckControlsDisabled(false);
                 return;
             }
@@ -515,8 +527,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         rebuildPosInOrder();
                         deckStart = 0;
                         renderDeck(null, 0); // classes sync up here with the transition still suppressed — no jump to hide
+                        // Force a style flush before lifting the suppression below. Without
+                        // this, the class sync above and the transition restore below land in
+                        // the same tick, so the browser never observes a rendered frame where
+                        // the new classes apply WITH transitions off — it only diffs the stale
+                        // pre-shuffle classes against the restored (transitions-on) state, and
+                        // quietly starts a real 0.6s transition from the old arrangement. That
+                        // was the actual cause of a random card appearing to peel back off the
+                        // fan a moment after the reveal had already finished.
+                        void deckEl.offsetHeight;
                         deckCards.forEach(card => card.style.removeProperty('transition')); // safe to resume normal transitions now that classes match reality
-                        isShuffling = false;
+                        isBusy = false;
                         setDeckControlsDisabled(false);
                     });
                 });
