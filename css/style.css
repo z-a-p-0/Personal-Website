@@ -437,6 +437,20 @@ section { padding: 80px 0; }
     margin-right: calc(50% - 50vw);
 }
 
+/* Faint guide line behind the belt, matching BELT_ANGLE (5deg) in main.js so
+   it visually reads as the path the circles are travelling along. */
+.about-conveyor::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -10%;
+    width: 120%;
+    border-top: 2px dashed rgba(41, 41, 41, 0.15);
+    transform: rotate(-5deg);
+    transform-origin: center;
+    z-index: 0;
+}
+
 .about-conveyor-circle {
     position: absolute;
     top: 0;
@@ -449,6 +463,7 @@ section { padding: 80px 0; }
     box-shadow: var(--shadow-card);
     overflow: hidden;
     transition: box-shadow 0.25s ease, border-color 0.25s ease;
+    z-index: 1;
 }
 
 .about-conveyor-circle:hover {
@@ -670,45 +685,42 @@ section { padding: 80px 0; }
 .projects-intro-section { background-color: var(--light-bg); text-align: center; padding-top: 60px; }
 .projects-intro-section .lead { max-width: 640px; margin: 0 auto; }
 .projects-deck-section { background-color: #f8f5f1; }
-/* Fades out once "Show All Projects" has dealt every card out of it, then
-   projects.js sets [hidden] once the transition ends. Deliberately just a
-   fade (no shrinking/overflow tricks) — the fanned left/right cards are
-   MEANT to render outside .container's own box, so anything that clips or
-   constrains that box (overflow: hidden, a grid track sized off content)
-   cuts them off while the section is still visible/in use. */
-.projects-deck-section {
-    /* transform kept in the list (matching .section's own transition) so the
-       scroll-reveal fade-in this section already gets from .section/.visible
-       still animates — this rule wins the cascade over .section's shorter
-       list since both are single-class selectors and this one loads later. */
-    transition: opacity 0.4s ease, transform 0.6s ease;
-}
-.projects-deck-section.deck-emptied { opacity: 0; }
-.projects-deck-section[hidden] { display: none; }
 
-.projects-all-section { background-color: var(--white); }
-.projects-all-header { text-align: center; margin-bottom: 30px; }
+/* The deck (fan/pack + controls) and the "Every Project" header/button never
+   move or reorder — plain document flow, deck above button, exactly as
+   before. "Show All" (js/projects.js §6) moves the SAME 9 card elements out
+   of #projectDeck into #projectGrid below the button and back again; nothing
+   here changes position to make room for that, it just empties/fills. */
+.projects-all-header { text-align: center; margin-top: 30px; margin-bottom: 30px; }
+.projects-all-header p { margin-bottom: 20px; }
 
-/* Full grid stays collapsed until "Show All" deals it out. Cards start
-   offset/rotated (as if still in the pack) and settle into the grid with a
-   per-card stagger delay set inline by projects.js. */
-.project-full-grid {
+/* Once every card has left #projectDeck for the grid below, the deck+controls
+   have nothing left to show — fade the whole area out in place (not
+   overflow:hidden/height-clamped until AFTER the cards have actually left,
+   see collapseDeckArea() in js/projects.js §6, so the fanned left/right cards
+   — which render outside .project-deck's own box — never get clipped
+   mid-flight) rather than leaving an empty husk on the page. */
+.deck-area { transition: opacity 0.4s ease; }
+.deck-area.deck-emptied { opacity: 0; }
+.deck-area[hidden] { display: none; }
+
+/* Where dealt cards land — a real CSS Grid, empty (and so effectively
+   invisible, no extra whitespace) until js/projects.js §6 appends cards into
+   it. Cards keep their .deck-card class; these overrides strip the deck's
+   absolute fan/pack positioning back down to a plain grid item. */
+.project-grid-area {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 28px;
-    margin-top: 10px;
 }
-.project-full-grid[hidden] { display: none; }
-
-.project-full-grid .deal-card {
-    opacity: 0;
-    transform: translateY(40px) rotate(-4deg) scale(0.94);
-    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-    transition-delay: var(--deal-delay, 0ms);
-}
-.project-full-grid.dealt .deal-card {
-    opacity: 1;
+.project-grid-area .deck-card {
+    position: static;
+    top: auto;
+    left: auto;
+    width: auto;
+    height: auto;
     transform: none;
+    z-index: auto;
 }
 
 /* A card that opens a full case study reads a little bolder */
@@ -757,7 +769,7 @@ section { padding: 80px 0; }
     section { padding: 60px 0; }
     .hero-section { padding: 80px 0; }
     .project-grid { grid-template-columns: repeat(2, 1fr); }
-    .project-full-grid { grid-template-columns: repeat(2, 1fr); }
+    .project-grid-area { grid-template-columns: repeat(2, 1fr); }
     /* Tighter fan so the side cards don't run off narrow viewports */
     .project-deck { --fan: 72%; }
     .deck-card { width: clamp(220px, 40vw, 300px); }
@@ -771,7 +783,7 @@ section { padding: 80px 0; }
     .navbar li a { padding: 14px 20px; border-bottom: none; border-left: 3px solid transparent; }
     .navbar li a:hover { border-bottom-color: transparent; border-left-color: var(--primary-color); background-color: #f5f5f5; }
     .project-grid { grid-template-columns: 1fr; }
-    .project-full-grid { grid-template-columns: 1fr; }
+    .project-grid-area { grid-template-columns: 1fr; }
     /* On phones the fan is too cramped: hide the side cards, show one at a time */
     .project-deck { --fan: 50%; height: clamp(400px, 120vw, 460px); }
     .deck-card { width: min(88vw, 320px); }
@@ -793,11 +805,11 @@ section { padding: 80px 0; }
     #heroH1 .h1-letter { opacity: 1; animation: none; }
     #heroP              { opacity: 1; animation: none; }
     /* Deck still slots correctly, just no fly animation between states —
-       initProjectDeck also skips the WAAPI .animate() call entirely under
-       reduced motion, so this only needs to cover the plain class-swap. */
+       initProjectDeck (and the Show All deal/gather flights) also skip the
+       WAAPI .animate() call entirely under reduced motion, so this only
+       needs to cover the plain class-swap. */
     .deck-card,
-    .project-full-grid .deal-card { transition: none; }
-    .project-full-grid .deal-card { opacity: 1; transform: none; }
+    .deck-area { transition: none; }
     /* No shine sweep, icon pop or lift travel — hover still shows via shadow/border */
     .card { transition: none; }
     .card:hover, .card:focus-within { transform: none; }

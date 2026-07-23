@@ -71,29 +71,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------
-    // 4. PROJECT DECK (cloned from the full grid)
+    // 4. PROJECT DECK
     // ----------------------------------------
+    // The deck cards ARE the "every project" cards — one set of elements,
+    // authored once directly in the HTML. "Show All" (section 6) reuses this
+    // same #projectDeck container and card set to deal them into a grid, so
+    // there's nothing here to clone or keep in sync with a second copy.
     const projectDeckEl = document.getElementById('projectDeck');
-    const gridCards      = Array.from(document.querySelectorAll('#projectFullGrid .deal-card'));
+    let deckApi = null;
+    // Shared with section 6: guards Show All against double-clicks and gates
+    // the grid tilt effect (section 5) so it never fights a mid-flight card.
+    let isDealing = false;
 
-    if (projectDeckEl && gridCards.length) {
-        gridCards.forEach(source => {
-            const clone = source.cloneNode(true); // deep copy keeps the inline --card-accent
-            clone.classList.remove('deal-card');
-            clone.classList.add('deck-card');
-            projectDeckEl.appendChild(clone);
-        });
-
-        initProjectDeck(projectDeckEl);
+    if (projectDeckEl && projectDeckEl.querySelector('.deck-card')) {
+        deckApi = initProjectDeck(projectDeckEl);
     }
 
     // Same riffle behaviour as the home deck (see js/main.js §9): prev/next
-    // buttons, click a side card to centre it, swipe, and arrow keys.
+    // buttons, click a side card to centre it, swipe, and arrow keys. Returns
+    // a small API so section 6 can drive the SAME deck (deal it out into a
+    // grid and gather it back) without duplicating any of this state.
     function initProjectDeck(deckEl) {
         const deckCards = Array.from(deckEl.querySelectorAll('.deck-card'));
         const cardCount = deckCards.length;
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const controlsWrapEl = deckEl.nextElementSibling; // .deck-controls
+        // Looked up by class rather than deckEl.nextElementSibling — on this
+        // page .deck-controls sits inside #deckChrome, a sibling of
+        // #projectDeck under their shared #deckArea wrapper, not directly
+        // after #projectDeck itself.
+        const controlsWrapEl = deckEl.parentElement?.querySelector('.deck-controls');
         // The bulge arc aims at the cycle buttons, not the whole controls
         // block — on the home page that block also holds the "See More
         // Projects" link below the cycle row, which would pull the arc's
@@ -178,6 +184,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // just as much as a resize does.
         function measureGeometry() {
             if (!stackEl || !controlsEl || !deckCards.length) return;
+            // A scroll/resize (including the scroll-anchoring nudge Chrome
+            // fires when #deckArea hides/restores around "Show All"/"Put
+            // Cards Back") can land a remeasure while the deck is
+            // display:none — a zero-size rect here would overwrite
+            // --stack-x/--stack-y/--stack-scale with garbage that then sticks
+            // for every card until the next real remeasure. Bail instead;
+            // gatherBack() (section 6) always un-hides #deckArea and calls
+            // measureGeometry() again before anything needs a fresh value.
+            if (deckEl.offsetParent === null || stackEl.offsetParent === null) return;
             const deckRect = deckEl.getBoundingClientRect();
             const stackRect = stackEl.getBoundingClientRect();
             const controlsRect = controlsEl.getBoundingClientRect();
@@ -575,20 +590,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         renderDeck(null, 0);
+
+        return {
+            deckCards,
+            renderDeck,
+            measureGeometry,
+            setDeckControlsDisabled,
+            setBusy: v => { isBusy = v; },
+            // Where a card currently sits in the logical deal sequence (0 =
+            // front of the fan/pack, cardCount - 1 = bottom of the pack) —
+            // section 6 uses this both to order the deal-out stagger and to
+            // give each grid cell a matching CSS `order`.
+            slotPosOf: card => posOf(posInOrder[deckCards.indexOf(card)], deckStart),
+        };
     }
 
 
     // ----------------------------------------
-    // 5. GRID CARD TILT
+    // 5. GRID CARD TILT (once Show All has dealt the grid out)
     // ----------------------------------------
-    // Subtle 3D tilt following the cursor on the full-grid cards. Inline
-    // transform wins over the CSS hover lift, so the lift is folded in here
-    // and cleared on leave to hand control back to the stylesheet. Deck cards
-    // are excluded — their transform belongs to the slot classes.
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+    // Subtle 3D tilt following the cursor, once a card is sitting in the
+    // grid. Inline transform wins over the CSS hover lift, so the lift is
+    // folded in here and cleared on leave to hand control back to the
+    // stylesheet. Gated on the card actually being in #projectGrid + !isDealing
+    // so it never fights the slot-fan hover transforms or a card mid-flight
+    // (section 6).
+    const projectGridEl = document.getElementById('projectGrid');
+
+    if (deckApi && projectGridEl && !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
         window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-        gridCards.forEach(card => {
+        deckApi.deckCards.forEach(card => {
             card.addEventListener('pointermove', e => {
+                if (isDealing || card.parentElement !== projectGridEl) return;
                 const r = card.getBoundingClientRect();
                 const px = (e.clientX - r.left) / r.width  - 0.5;
                 const py = (e.clientY - r.top)  / r.height - 0.5;
@@ -601,14 +634,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------
-    // 6. SHOW ALL — deal the pack out
+    // 6. SHOW ALL — deal the deck into a fixed grid spot below the button
     // ----------------------------------------
+    // The deck (#projectDeck, #deckArea) and the "Every Project" header/button
+    // never move — "Show All" physically moves the SAME 9 card elements out of
+    // #projectDeck into #projectGrid (which sits below the button) and back,
+    // no cloning. Each move is a FLIP: read every card's on-screen pose before
+    // the move, let the reparent + class swap jump it straight to its new
+    // spot, then animate that jump back down to zero — same transform
+    // function list (translate, rotate, rotateX, rotateZ, scale) at every
+    // keyframe as the deck's own slot-crossing flight (section 4); matching
+    // lists keep the browser's interpolation component-wise instead of
+    // falling back to matrix decomposition, which is what produced wildly
+    // oversized in-between frames when this was tried without it.
     const showAllButton = document.getElementById('showAllBtn');
-    const fullGridEl     = document.getElementById('projectFullGrid');
+    const deckAreaEl = document.getElementById('deckArea');
 
-    if (showAllButton && fullGridEl) {
-        const dealCards = Array.from(fullGridEl.querySelectorAll('.deal-card'));
-
+    if (deckApi && showAllButton && deckAreaEl && projectGridEl) {
         // The ripple init (section 2) wraps the label in a <span>, so write the
         // label there rather than to the button to avoid nuking the ripple blob.
         const setLabel = text => {
@@ -617,160 +659,185 @@ document.addEventListener('DOMContentLoaded', () => {
             else showAllButton.textContent = text;
         };
 
-        let isDealing = false;
-
         // Real dealer's rhythm — one card visibly launches, THEN the next,
-        // rather than the whole pack leaving at once. --deal-delay (the real
-        // grid cards' own fade-in stagger) is kept in step with it so a card
-        // lands right as its grid twin finishes fading in underneath it.
-        const DEAL_STAGGER_MS = 130;
-        const DEAL_FLIGHT_MS = 560;
-        dealCards.forEach((card, i) => card.style.setProperty('--deal-delay', (i * DEAL_STAGGER_MS) + 'ms'));
+        // rather than the whole pack leaving/landing at once.
+        const DEAL_STAGGER_MS = 110;
+        const DEAL_FLIGHT_MS = 650;
+        // Matches the bulge waypoint next/prev/shuffle fly their own cards
+        // through (see BULGE_SCALE / rotateX(28)/rotateZ(-9) in section 4) —
+        // same 3D flourish on every card, just re-declared here since that
+        // scope isn't reachable from this section.
+        const BULGE_SCALE = 0.55;
 
-        function revealGrid() {
-            fullGridEl.removeAttribute('hidden');
-            // Force layout before adding .dealt so the deal-in transition runs
-            fullGridEl.getBoundingClientRect();
-            fullGridEl.classList.add('dealt');
-            setLabel('Hide Projects');
-            showAllButton.setAttribute('aria-expanded', 'true');
+        // Pose a slot class resolves to (rotate/rotateX/rotateZ/scale) — the
+        // same numbers .deck-card.slot-left/right/pack apply via CSS in
+        // section 4/style.css, re-derived here since that scope isn't
+        // reachable from this section.
+        function slotPose(card, stackScale) {
+            if (card.classList.contains('slot-left'))  return { rotate: -7, rotateX: 0, rotateZ: 0, scale: 1 };
+            if (card.classList.contains('slot-right')) return { rotate: 7,  rotateX: 0, rotateZ: 0, scale: 1 };
+            if (card.classList.contains('slot-pack'))  return { rotate: 0,  rotateX: 58, rotateZ: -18, scale: stackScale };
+            return { rotate: 0, rotateX: 0, rotateZ: 0, scale: 1 };
         }
 
-        // Once every card has been dealt out, the deck above has nothing
-        // left in it — collapse the whole deck section (cards, controls,
-        // stack spacer) instead of leaving an empty husk on the page.
-        const deckSectionEl = document.querySelector('.projects-deck-section');
-        function collapseDeckSection() {
-            if (!deckSectionEl) return;
-            deckSectionEl.classList.add('deck-emptied');
-            deckSectionEl.addEventListener('transitionend', () => {
-                deckSectionEl.setAttribute('hidden', '');
+        // FLIP transform: tx/ty is the delta between where the card visibly
+        // IS and where its current (already-applied) layout puts it, so
+        // translate(0,0) always means "exactly where the DOM/CSS already say
+        // this card belongs" — the same convention slotTransform/packTransform
+        // use in section 4, just expressed as a live delta instead of a
+        // fixed slot position.
+        const poseTransform = (tx, ty, rotate, rotateX, rotateZ, scale) =>
+            `translate(${tx}px, ${ty}px) rotate(${rotate}deg) rotateX(${rotateX}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
+
+        function currentStackScale() {
+            return parseFloat(getComputedStyle(projectDeckEl).getPropertyValue('--stack-scale')) || 0.3;
+        }
+
+        function flightCenter(rect) {
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        }
+
+        // Once every card has left #projectDeck, fade #deckArea out in place
+        // rather than leaving an empty fan/controls husk on the page. Only
+        // called AFTER the flights have actually finished — the fanned
+        // left/right cards render outside .project-deck's own box, so
+        // collapsing while any were still mid-flight through that area would
+        // risk clipping them.
+        function collapseDeckArea() {
+            deckAreaEl.classList.add('deck-emptied');
+            deckAreaEl.addEventListener('transitionend', () => {
+                deckAreaEl.setAttribute('hidden', '');
             }, { once: true });
         }
+        function restoreDeckArea() {
+            deckAreaEl.removeAttribute('hidden');
+            // Force layout before dropping .deck-emptied so the fade-in transition runs
+            deckAreaEl.getBoundingClientRect();
+            deckAreaEl.classList.remove('deck-emptied');
+        }
 
-        // Flies each REAL deck card (the 3 fanned + the packed rest — same
-        // elements, same order dealCards were originally cloned from in
-        // section 4, so index i always maps to the same project) out of the
-        // deck above and down into its resting spot in the grid below, like
-        // an actual deck being dealt: the cards LEAVE the deck, so it ends
-        // up empty once they land, rather than a copy flying while the deck
-        // stays fully stocked.
-        function dealOutFromDeck() {
-            const deckFlightCards = Array.from(document.querySelectorAll('#projectDeck .deck-card'));
-            if (!deckFlightCards.length) { revealGrid(); return Promise.resolve(); }
+        // Deal every card out of its fan/pack slot into #projectGrid, in the
+        // order it currently sits in the deck (front of the fan first, then
+        // the pack in depth order) — appending them in that same sequence
+        // means the card dealt first also lands in the first (top-left) cell.
+        function dealOut() {
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            deckApi.setBusy(true);
+            deckApi.setDeckControlsDisabled(true);
+            setLabel('Put Cards Back');
+            showAllButton.setAttribute('aria-expanded', 'true');
 
-            ['deckPrevBtn', 'deckShuffleBtn', 'deckNextBtn'].forEach(id => {
-                const btn = document.getElementById(id);
-                if (btn) btn.disabled = true;
+            const stackScale = currentStackScale();
+            const dealSequence = deckApi.deckCards.slice().sort((a, b) => deckApi.slotPosOf(a) - deckApi.slotPosOf(b));
+            const firsts = reducedMotion ? null : dealSequence.map(card => ({
+                card,
+                center: flightCenter(card.getBoundingClientRect()),
+                pose: slotPose(card, stackScale),
+            }));
+
+            dealSequence.forEach(card => {
+                card.classList.remove('slot-left', 'slot-center', 'slot-right', 'slot-pack');
+                card.style.removeProperty('--depth');
+                projectGridEl.appendChild(card); // leaves #projectDeck and lands in the grid, in deal order
+                card.setAttribute('aria-hidden', 'false');
+                card.querySelectorAll('a, button').forEach(el => { el.tabIndex = 0; });
             });
 
-            const startRects = deckFlightCards.map(c => c.getBoundingClientRect());
+            if (reducedMotion) {
+                deckAreaEl.classList.add('deck-emptied');
+                deckAreaEl.setAttribute('hidden', '');
+                return Promise.resolve();
+            }
 
-            // Reveal + settle the grid invisibly first, purely to measure
-            // where each card lands, then roll it back to its pre-deal
-            // (hidden) pose so the real cards fade in for real once the
-            // flying cards arrive instead of just sitting there pre-revealed.
-            fullGridEl.removeAttribute('hidden');
-            fullGridEl.style.visibility = 'hidden';
-            fullGridEl.classList.add('dealt');
-            const endRects = dealCards.map(c => c.getBoundingClientRect());
-            fullGridEl.classList.remove('dealt');
-            fullGridEl.style.visibility = '';
-
-            // Matches the isometric pack tilt (rotateX/rotateZ/scale) that
-            // .deck-card.slot-pack and packTransform() in section 4 use, so
-            // a packed card's flight starts from the exact pose it's already
-            // showing instead of snapping to a flat rectangle first.
-            const deckEl = document.getElementById('projectDeck');
-            const stackScale = parseFloat(getComputedStyle(deckEl).getPropertyValue('--stack-scale')) || 0.3;
-            // Matches the bulge waypoint next/prev/shuffle fly their own
-            // cards through (see BULGE_SCALE / rotateX(28)/rotateZ(-9) in
-            // section 4) — same 3D flourish, just re-declared here since
-            // that scope isn't reachable from this section.
-            const BULGE_SCALE = 0.55;
-
-            const flights = deckFlightCards.map((card, i) => {
-                const start = startRects[i];
-                const end = endRects[i] || start;
-                const fullW = card.offsetWidth;
-                const fullH = card.offsetHeight;
-
-                // Read the card's CURRENT pose straight off its slot class —
-                // fanned tilt or packed isometric lie — so the flight's first
-                // keyframe is whatever it's actually showing right now, the
-                // same starting point next/prev/shuffle would use for it.
-                let fromRotate = 0, fromRotateX = 0, fromRotateZ = 0, fromScale = 1;
-                if (card.classList.contains('slot-left')) fromRotate = -7;
-                else if (card.classList.contains('slot-right')) fromRotate = 7;
-                else if (card.classList.contains('slot-pack')) {
-                    fromRotateX = 58;
-                    fromRotateZ = -18;
-                    fromScale = stackScale;
-                }
-
-                const startCenterX = start.left + start.width / 2;
-                const startCenterY = start.top + start.height / 2;
-                const endCenterX = end.left + end.width / 2;
-                const endCenterY = end.top + end.height / 2;
-                const bulgeCenterX = (startCenterX + endCenterX) / 2;
-                const bulgeCenterY = (startCenterY + endCenterY) / 2;
+            const flights = firsts.map(({ card, center, pose }, i) => {
+                const dest = flightCenter(card.getBoundingClientRect());
+                const dx = center.x - dest.x;
+                const dy = center.y - dest.y;
                 const spin = i % 2 === 0 ? 10 : -10;
 
-                const poseAt = (cx, cy, rotate, rotateX, rotateZ, scale) =>
-                    `perspective(1400px) translate(${cx - fullW / 2}px, ${cy - fullH / 2}px) rotate(${rotate}deg) rotateX(${rotateX}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
-
                 card.getAnimations().forEach(a => a.cancel());
-                // Reparent to <body> — this is what actually empties the
-                // deck — before switching to fixed positioning. .project-deck
-                // has `perspective`, which (like `transform`) establishes a
-                // containing block for fixed descendants, so flying the card
-                // in place would pin it to the deck's own box instead of the
-                // viewport. perspective(1400px) is re-added directly in the
-                // transform above so the card keeps its own 3D vanishing
-                // point wherever it travels, instead of losing it along with
-                // the deck's ancestor-level `perspective`.
-                document.body.appendChild(card);
-                card.classList.remove('slot-left', 'slot-center', 'slot-right', 'slot-pack');
-                card.style.cssText = `position:fixed; top:0; left:0; margin:0; width:${fullW}px; height:${fullH}px; z-index:900; pointer-events:none;`;
-
                 const anim = card.animate([
-                    { transform: poseAt(startCenterX, startCenterY, fromRotate, fromRotateX, fromRotateZ, fromScale), opacity: 1 },
-                    { transform: poseAt(bulgeCenterX, bulgeCenterY, spin, 28, -9, BULGE_SCALE), opacity: 1, offset: 0.6 },
-                    { transform: poseAt(endCenterX, endCenterY, 0, 0, 0, 1), opacity: 0 },
+                    { transform: poseTransform(dx, dy, pose.rotate, pose.rotateX, pose.rotateZ, pose.scale) },
+                    { transform: poseTransform(dx * 0.5, dy * 0.5, spin, 28, -9, BULGE_SCALE) },
+                    { transform: poseTransform(0, 0, 0, 0, 0, 1) },
                 ], {
                     duration: DEAL_FLIGHT_MS,
                     delay: i * DEAL_STAGGER_MS,
                     easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
                     fill: 'both',
                 });
-                return anim.finished.catch(() => {}).then(() => card.remove());
+                return anim.finished.catch(() => {}).then(() => anim.cancel());
             });
 
-            revealGrid();
-            return Promise.all(flights).then(collapseDeckSection);
+            return Promise.all(flights).then(collapseDeckArea);
+        }
+
+        // Reverse of dealOut: gather every grid card back into #projectDeck,
+        // then let deckApi.renderDeck(null, 0) settle each into the exact
+        // fan/pack slot it belongs in (deckStart/deckOrder were never touched
+        // by dealing out, so it's exactly the arrangement the deck was left
+        // in). Staggered like a hand being gathered up: the last card dealt
+        // is the first one picked back up.
+        function gatherBack() {
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            deckApi.setBusy(true);
+            deckApi.setDeckControlsDisabled(true);
+            setLabel('Show All Projects');
+            showAllButton.setAttribute('aria-expanded', 'false');
+
+            const firsts = reducedMotion ? null : deckApi.deckCards.map(card => ({
+                card,
+                center: flightCenter(card.getBoundingClientRect()),
+            }));
+
+            restoreDeckArea();
+            deckApi.measureGeometry();
+            deckApi.deckCards.forEach(card => projectDeckEl.appendChild(card)); // back into #projectDeck, original source order
+            deckApi.renderDeck(null, 0);
+
+            if (reducedMotion) {
+                deckApi.setBusy(false);
+                deckApi.setDeckControlsDisabled(false);
+                return Promise.resolve();
+            }
+
+            const stackScale = currentStackScale();
+            const ordered = firsts.slice().sort((a, b) => deckApi.slotPosOf(b.card) - deckApi.slotPosOf(a.card));
+
+            const flights = ordered.map(({ card, center }, i) => {
+                const dest = flightCenter(card.getBoundingClientRect());
+                const pose = slotPose(card, stackScale);
+                const dx = center.x - dest.x;
+                const dy = center.y - dest.y;
+                const spin = i % 2 === 0 ? -10 : 10;
+
+                card.getAnimations().forEach(a => a.cancel());
+                const anim = card.animate([
+                    { transform: poseTransform(dx, dy, 0, 0, 0, 1) },
+                    { transform: poseTransform(dx * 0.5, dy * 0.5, spin, 28, -9, BULGE_SCALE) },
+                    { transform: poseTransform(0, 0, pose.rotate, pose.rotateX, pose.rotateZ, pose.scale) },
+                ], {
+                    duration: DEAL_FLIGHT_MS,
+                    delay: i * DEAL_STAGGER_MS,
+                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    fill: 'both',
+                });
+                return anim.finished.catch(() => {}).then(() => anim.cancel());
+            });
+
+            return Promise.all(flights).then(() => {
+                deckApi.setBusy(false);
+                deckApi.setDeckControlsDisabled(false);
+            });
         }
 
         showAllButton.addEventListener('click', () => {
             if (isDealing) return;
-            const opening = fullGridEl.hasAttribute('hidden');
-            if (opening) {
-                const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                isDealing = true;
-                showAllButton.disabled = true;
-                let done;
-                if (reducedMotion) {
-                    revealGrid();
-                    done = Promise.resolve();
-                } else {
-                    done = dealOutFromDeck();
-                }
-                done.then(() => { isDealing = false; showAllButton.disabled = false; });
-            } else {
-                fullGridEl.classList.remove('dealt');
-                fullGridEl.setAttribute('hidden', '');
-                setLabel('Show All Projects');
-                showAllButton.setAttribute('aria-expanded', 'false');
-            }
+            const opening = !projectGridEl.hasChildNodes(); // empty grid = cards are still in the deck
+            isDealing = true;
+            showAllButton.disabled = true;
+            const done = opening ? dealOut() : gatherBack();
+            Promise.resolve(done).then(() => { isDealing = false; showAllButton.disabled = false; });
         });
     }
 
